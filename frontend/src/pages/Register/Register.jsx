@@ -1,11 +1,11 @@
-// Register.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { toast } from 'react-toastify';
-import { USER_ROLES } from '../../constants/userRoles';
-import { validateEmail } from '../../utils/validation';
-import './Register.css';
+import FormInput from '../../components/FormInput/FormInput';
+import Button from '../../components/Button/Button';
+import { registerUser } from '../../services/auth.service';
+import { USER_ROLES } from '../../utils/constants';
+import '../../styles/Register.css';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -39,7 +39,7 @@ const Register = () => {
     if (!formData.fullname) newErrors.fullname = 'Full name is required';
     if (!formData.email) {
       newErrors.email = 'Email is required';
-    } else if (!validateEmail(formData.email)) {
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Email is invalid';
     }
     if (!formData.password) {
@@ -59,21 +59,14 @@ const Register = () => {
 
     setIsLoading(true);
     try {
-      const response = await axios.post(
-        `${process.env.REACT_APP_API_URL}/auth/register`,
-        formData
-      );
-
-      if (response.data.success) {
-        toast.success('Registration successful!');
-        navigate('/login');
-      }
+      await registerUser(formData);
+      toast.success('Registration successful!');
+      navigate('/login');
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Registration failed';
-      toast.error(errorMessage);
+      toast.error(error.message);
       setErrors(prev => ({
         ...prev,
-        submit: errorMessage
+        submit: error.message
       }));
     } finally {
       setIsLoading(false);
@@ -114,51 +107,41 @@ const Register = () => {
           {errors.userType && <div className="error-message">{errors.userType}</div>}
         </div>
 
-        <div className="input-container">
-          <input
-            className="form-input"
-            type="text"
-            name="fullname"
-            placeholder="fullname"
-            value={formData.fullname}
-            onChange={handleChange}
-          />
-          {errors.fullname && <div className="error-message">{errors.fullname}</div>}
-        </div>
+        <FormInput
+          type="text"
+          name="fullname"
+          placeholder="fullname"
+          value={formData.fullname}
+          onChange={handleChange}
+          error={errors.fullname}
+        />
 
-        <div className="input-container">
-          <input
-            className="form-input"
-            type="email"
-            name="email"
-            placeholder="Email address"
-            value={formData.email}
-            onChange={handleChange}
-          />
-          {errors.email && <div className="error-message">{errors.email}</div>}
-        </div>
+        <FormInput
+          type="email"
+          name="email"
+          placeholder="Email address"
+          value={formData.email}
+          onChange={handleChange}
+          error={errors.email}
+        />
 
-        <div className="input-container">
-          <input
-            className="form-input"
-            type="password"
-            name="password"
-            placeholder="Password"
-            value={formData.password}
-            onChange={handleChange}
-          />
-          {errors.password && <div className="error-message">{errors.password}</div>}
-        </div>
+        <FormInput
+          type="password"
+          name="password"
+          placeholder="Password"
+          value={formData.password}
+          onChange={handleChange}
+          error={errors.password}
+        />
 
         {errors.submit && <div className="submit-error">{errors.submit}</div>}
 
-        <button
-          className="submit-button"
+        <Button
           type="submit"
-          disabled={isLoading}
+          loading={isLoading}
         >
-          {isLoading ? 'Signing up...' : 'sign up'}
-        </button>
+          sign up
+        </Button>
       </form>
     </div>
   );

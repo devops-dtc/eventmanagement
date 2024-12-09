@@ -1,17 +1,15 @@
-import React from 'react';
-import './FormInput.css';
+import '../../styles/Register.css';
 
 const FormInput = ({ 
   type, 
   placeholder, 
   value, 
   onChange, 
-  error, 
-  name,
-  ...props 
+  name, 
+  error 
 }) => {
   return (
-    <div className="form-input-container">
+    <div className="form-input-wrapper">
       <input
         type={type}
         placeholder={placeholder}
@@ -19,9 +17,8 @@ const FormInput = ({
         onChange={onChange}
         name={name}
         className={`form-input ${error ? 'error' : ''}`}
-        {...props}
       />
-      {error && <span className="error-message">{error}</span>}
+      {error && <span className="input-error">{error}</span>}
     </div>
   );
 };

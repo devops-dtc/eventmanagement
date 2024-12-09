@@ -1,15 +1,21 @@
 import React from 'react';
-import './Button.css';
+import '../../styles/Register.css';
 
-const Button = ({ children, type = 'button', onClick, isLoading }) => {
+const Button = ({ 
+  children, 
+  type = 'button', 
+  onClick, 
+  disabled, 
+  loading 
+}) => {
   return (
-    <button 
-      className="custom-button" 
+    <button
       type={type}
       onClick={onClick}
-      disabled={isLoading}
+      disabled={disabled || loading}
+      className={`custom-button ${loading ? 'loading' : ''}`}
     >
-      {isLoading ? 'Loading...' : children}
+      {loading ? 'Loading...' : children}
     </button>
   );
 };
