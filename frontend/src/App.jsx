@@ -6,15 +6,17 @@ import Register from './pages/Auth/Register';
 import Events from './pages/Events/Events';
 import Enrollment from './pages/Enrollment/Enrollment';
 import 'react-toastify/dist/ReactToastify.css';
+import OrganizerEvents from './pages/OrganizerEvents/OrganizerEvents';
 
 const App = () => {
   return (
     <AuthProvider>
       <Router>
         <Routes>
-          <Route path="/" element={<Enrollment/>} />
+          <Route path="/" element={<OrganizerEvents/>} />
           <Route path="/events" element={<Events />} />
           <Route path="/enrollment" element={<Enrollment />} />
+          <Route path="/organizer-events" element={<OrganizerEvents />} />
         </Routes>
         <ToastContainer />
       </Router>
@@ -23,3 +25,5 @@ const App = () => {
 };
 
 export default App;
+
+

@@ -1,0 +1,141 @@
+/* src/pages/OrganizerEvents/OrganizerEvents.css */
+
+.events-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  
+  .create-event-button {
+    background: #000;
+    color: white;
+    border: none;
+    border-radius: 15px;
+    padding: 12px 24px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .create-event-button:hover {
+    background: #F94B3E;
+    transform: translateY(-2px);
+  }
+  
+  .tab-buttons {
+    display: inline-flex;
+    background: white;
+    border-radius: 28.5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .tab-button {
+    border: none;
+    padding: 15px 30px;
+    border-radius: 28.5px;
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    background: transparent;
+    color: #666;
+    transition: all 0.3s ease;
+  }
+  
+  .tab-button.active {
+    background: #F94B3E;
+    color: white;
+  }
+  
+  .tab-button:hover:not(.active) {
+    background: rgba(249, 75, 62, 0.1);
+  }
+  
+  .edit-button {
+    background: #000;
+    color: white;
+    border: none;
+    border-radius: 15px;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.3s ease;
+  }
+  
+  .edit-button:hover {
+    background: #F94B3E;
+    transform: translateY(-2px);
+  }
+  
+  /* Add these styles to your existing responsive styles */
+  @media (max-width: 768px) {
+    .events-header {
+      flex-direction: column;
+      gap: 15px;
+    }
+  
+    .tab-buttons {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+    }
+  
+    .tab-button {
+      padding: 12px 20px;
+      font-size: 14px;
+    }
+  
+    .create-event-button {
+      width: 100%;
+    }
+  }
+  
+  .action-buttons {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .delete-button {
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 15px;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.3s ease;
+  }
+  
+  .delete-button:hover {
+    background: #c82333;
+    transform: translateY(-2px);
+  }
+  
+  .no-events-message {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+    font-family: 'Inter', sans-serif;
+    font-size: 18px;
+  }
+  
+  .loading-spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+    color: #666;
+    font-family: 'Inter', sans-serif;
+  }
+  
