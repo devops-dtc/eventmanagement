@@ -4,6 +4,7 @@ import { ToastContainer } from 'react-toastify';
 import { AuthProvider } from './contexts/AuthContext';
 import Register from './pages/Auth/Register';
 import Events from './pages/Events/Events';
+import Enrollment from './pages/Enrollment/Enrollment';
 import 'react-toastify/dist/ReactToastify.css';
 
 const App = () => {
@@ -11,9 +12,9 @@ const App = () => {
     <AuthProvider>
       <Router>
         <Routes>
-          <Route path="/" element={<Events />} />
+          <Route path="/" element={<Enrollment/>} />
           <Route path="/events" element={<Events />} />
-          <Route path="/events" element={<Register />} />
+          <Route path="/enrollment" element={<Enrollment />} />
         </Routes>
         <ToastContainer />
       </Router>

@@ -50,7 +50,7 @@ const EventsList = () => {
           </button>
           <button 
             className={`tab-button ${activeTab === 'enrolled' ? 'active' : ''}`}
-            onClick={() => setActiveTab('enrolled')}
+            onClick={() => setActiveTab('enrolled')} //TO DO ADD SERVICE BASED ON THIS
           >
             Enrolled Events
           </button>
@@ -79,7 +79,7 @@ const EventsList = () => {
                       <span>📅 {event.date}</span>
                       <span style={{marginLeft: '15px'}}>⏰ {event.time}</span>
                     </div>
-                    <span>👥 {event.enrolled}/{event.capacity} enrolled</span>
+                    {/* <span>👥 {event.enrolled}/{event.capacity} enrolled</span> */}
                   </div>
                 </div>
                 <button 
