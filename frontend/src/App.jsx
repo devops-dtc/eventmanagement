@@ -1,21 +1,23 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
+import { AuthProvider } from './contexts/AuthContext';
 import Register from './pages/Auth/Register';
-import AdminEventManagement from './pages/Auth/AdminEventManagement';
-
+import Events from './pages/Events/Events';
 import 'react-toastify/dist/ReactToastify.css';
 
 const App = () => {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<AdminEventManagement />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/AdminEventManagement" element={<AdminEventManagement />} />
-      </Routes>
-      <ToastContainer position="top-right" />
-    </Router>
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Events />} />
+          <Route path="/events" element={<Events />} />
+          <Route path="/events" element={<Register />} />
+        </Routes>
+        <ToastContainer />
+      </Router>
+    </AuthProvider>
   );
 };
 
