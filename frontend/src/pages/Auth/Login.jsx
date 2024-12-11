@@ -1,4 +1,4 @@
-// src/pages/Auth/Register.jsx
+// src/pages/Auth/Login.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -6,14 +6,13 @@ import FormInput from '../../components/FormInput/FormInput';
 import Button from '../../components/Button/Button';
 import { USER_ROLES } from '../../utils/constants';
 import { useAuth } from '../../contexts/AuthContext';
-import '../../styles/Register.css';
+import '../../styles/Register.css'; // Using the same CSS file
 
-const Register = () => {
+const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
   const [formData, setFormData] = useState({
     userType: '',
-    fullname: '',
     email: '',
     password: ''
   });
@@ -38,7 +37,6 @@ const Register = () => {
   const validateForm = () => {
     const newErrors = {};
     if (!formData.userType) newErrors.userType = 'User type is required';
-    if (!formData.fullname) newErrors.fullname = 'Full name is required';
     if (!formData.email) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
@@ -46,8 +44,6 @@ const Register = () => {
     }
     if (!formData.password) {
       newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
     }
 
     setErrors(newErrors);
@@ -61,12 +57,12 @@ const Register = () => {
 
     setIsLoading(true);
 
-    // Backend registration logic (commented for future implementation)
+    // Backend login logic (commented for future implementation)
     /*
     try {
-      const response = await registerUser(formData);
+      const response = await loginUser(formData);
       login(response.user);
-      toast.success('Registration successful!');
+      toast.success('Login successful!');
       navigate(response.user.role === USER_ROLES.ATTENDEE ? '/events' : '/organizer-events');
     } catch (error) {
       toast.error(error.message);
@@ -77,21 +73,40 @@ const Register = () => {
     }
     */
 
-    // Dummy registration logic
+    // Dummy login logic
     try {
+      const dummyUsers = {
+        'attendee@test.com': { 
+          id: '1', 
+          name: 'Test Attendee', 
+          role: USER_ROLES.ATTENDEE, 
+          email: 'attendee@test.com' 
+        },
+        'organizer@test.com': { 
+          id: '2', 
+          name: 'Test Organizer', 
+          role: USER_ROLES.ORGANIZER, 
+          email: 'organizer@test.com' 
+        },
+        'admin@test.com': { 
+          id: '3', 
+          name: 'Test Admin', 
+          role: USER_ROLES.SUPER_ADMIN, 
+          email: 'admin@test.com' 
+        }
+      };
+
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      const newUser = {
-        id: Date.now().toString(),
-        name: formData.fullname,
-        email: formData.email,
-        role: formData.userType
-      };
-
-      login(newUser);
-      toast.success('Registration successful!');
-      navigate(newUser.role === USER_ROLES.ATTENDEE ? '/events' : '/organizer-events');
+      const user = dummyUsers[formData.email];
+      if (user && user.role === formData.userType) {
+        login(user);
+        toast.success('Login successful!');
+        navigate(user.role === USER_ROLES.ATTENDEE ? '/events' : '/organizer-events');
+      } else {
+        throw new Error('Invalid credentials');
+      }
     } catch (error) {
       toast.error(error.message);
       setErrors(prev => ({
@@ -107,18 +122,18 @@ const Register = () => {
     <div className="register-container">
       <div className="logo">easyevent</div>
       <form className="form-container" onSubmit={handleSubmit}>
-        <h1 className="heading">Cheers ahead!</h1>
+        <h1 className="heading">Welcome back!</h1>
         <p className="login-text">
-          Already have an account?{' '}
+          Don't have an account?{' '}
           <a 
-            href="/login" 
+            href="/register" 
             className="login-link"
             onClick={(e) => {
               e.preventDefault();
-              navigate('/login');
+              navigate('/register');
             }}
           >
-            Log in
+            Sign up
           </a>
         </p>
 
@@ -136,15 +151,6 @@ const Register = () => {
           </select>
           {errors.userType && <div className="error-message">{errors.userType}</div>}
         </div>
-
-        <FormInput
-          type="text"
-          name="fullname"
-          placeholder="Full name"
-          value={formData.fullname}
-          onChange={handleChange}
-          error={errors.fullname}
-        />
 
         <FormInput
           type="email"
@@ -170,11 +176,11 @@ const Register = () => {
           type="submit"
           loading={isLoading}
         >
-          sign up
+          log in
         </Button>
       </form>
     </div>
   );
 };
 
-export default Register;
+export default Login;

@@ -26,6 +26,13 @@ const Navbar = () => {
         <Link to="/profile" className="nav-item">PROFILE</Link>
         <Link to="/about" className="nav-item">ABOUT</Link>
         <Link to="/contact" className="nav-item">CONTACT US</Link>
+        <span 
+          className="nav-item" 
+          onClick={handleLogout}
+          style={{ cursor: 'pointer' }}
+        >
+          LOGOUT
+        </span>
       </nav>
 
       <div className="user-profile">
@@ -33,7 +40,7 @@ const Navbar = () => {
           <div>{user?.role || 'Guest'}</div>
           <div>{user?.name || 'Anonymous'}</div>
         </div>
-        <div className="avatar" onClick={handleLogout}></div>
+        <div className="avatar"></div>
       </div>
     </header>
   );
