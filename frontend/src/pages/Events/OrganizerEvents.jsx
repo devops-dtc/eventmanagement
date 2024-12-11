@@ -4,6 +4,7 @@ import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { eventsData } from '../Auth/EventsData'; 
 import Navbar from '../../components/Layout/Navbar/Navbar';
+import TabButtons from '../../components/TabButtons/TabButtons';
 import '../../styles/OrganizerEvents.css';
 
 const OrganizerEvents = () => {
@@ -11,25 +12,22 @@ const OrganizerEvents = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-
-
-  //TO DO ALLOW AUTH
-  // Check if user is authorized to view this page
-//   if (!user || (user.role !== 'Organizer' && user.role !== 'Admin')) { 
-//     return <Navigate to="/events" />;
-//   }
-
+  const tabs = [
+    { value: 'upcoming', label: 'Upcoming Events' },
+    { value: 'enrolled', label: 'Enrolled Events' },
+    { value: 'created', label: 'Created Events' }
+  ];
 
   // Filter events based on active tab
   const getFilteredEvents = () => {
     switch(activeTab) {
       case 'enrolled':
-        return eventsData.enrolled; // Use eventsData.enrolled instead of EventData.slice
+        return eventsData.enrolled;
       case 'created':
-        return eventsData.upcoming.slice(0, 2); // Use eventsData.upcoming instead of EventData
+        return eventsData.upcoming.slice(0, 2);
       case 'upcoming':
       default:
-        return eventsData.upcoming; // Use eventsData.upcoming instead of EventData
+        return eventsData.upcoming;
     }
   };
 
@@ -46,28 +44,11 @@ const OrganizerEvents = () => {
       <main className="main-content">
         <div className="events-container">
           <div className="events-header">
-            <div className="tab-container">
-              <div className="tab-buttons">
-                <button 
-                  className={`tab-button ${activeTab === 'upcoming' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('upcoming')}
-                >
-                  Upcoming Events
-                </button>
-                <button 
-                  className={`tab-button ${activeTab === 'enrolled' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('enrolled')}
-                >
-                  Enrolled Events
-                </button>
-                <button 
-                  className={`tab-button ${activeTab === 'created' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('created')}
-                >
-                  Created Events
-                </button>
-              </div>
-            </div>
+            <TabButtons 
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              tabs={tabs}
+            />
             <button 
               className="create-event-button"
               onClick={() => navigate('/create-event')}
@@ -110,29 +91,14 @@ const OrganizerEvents = () => {
                         </div>
                       </div>
                       {activeTab === 'created' ? (
-                        <div className="action-buttons">
-                          <button 
-                            className="edit-button"
-                            onClick={() => navigate(`/edit-event/${event.id}`, { 
-                              state: { eventDetails: event }
-                            })}
-                          >
-                            Edit Event
-                          </button>
-                          {user.role === 'Admin' && (
-                            <button 
-                              className="delete-button"
-                              onClick={() => {
-                                if(window.confirm('Are you sure you want to delete this event?')) {
-                                  // Add delete logic here
-                                  alert('Event deleted successfully');
-                                }
-                              }}
-                            >
-                              Delete
-                            </button>
-                          )}
-                        </div>
+                        <button 
+                          className="edit-button"
+                          onClick={() => navigate(`/edit-event/${event.id}`, { 
+                            state: { eventDetails: event }
+                          })}
+                        >
+                          Edit Event
+                        </button>
                       ) : (
                         <button 
                           className="enroll-button"
