@@ -1,16 +1,18 @@
 // src/pages/OrganizerEvents/OrganizerEvents.jsx
 import React, { useState } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { eventsData } from '../Auth/EventsData'; 
-import Navbar from '../../components/Layout/Navbar/Navbar';
+import OrganizerAdminNavbar from '../../components/Layout/Navbar/OrganizerAdminNavbar';
 import TabButtons from '../../components/TabButtons/TabButtons';
+import { toast } from 'react-toastify';
 import '../../styles/OrganizerEvents.css';
 
 const OrganizerEvents = () => {
   const [activeTab, setActiveTab] = useState('upcoming');
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [enrolledEvents, setEnrolledEvents] = useState(eventsData.enrolled);
 
   const tabs = [
     { value: 'upcoming', label: 'Upcoming Events' },
@@ -18,11 +20,10 @@ const OrganizerEvents = () => {
     { value: 'created', label: 'Created Events' }
   ];
 
-  // Filter events based on active tab
   const getFilteredEvents = () => {
     switch(activeTab) {
       case 'enrolled':
-        return eventsData.enrolled;
+        return enrolledEvents;
       case 'created':
         return eventsData.upcoming.slice(0, 2);
       case 'upcoming':
@@ -37,9 +38,26 @@ const OrganizerEvents = () => {
     });
   };
 
+  const handleRemoveEnrollment = (eventId) => {
+    // Backend remove enrollment logic (commented for future implementation)
+    /*
+    try {
+      await removeEventEnrollment(eventId);
+      setEnrolledEvents(prev => prev.filter(event => event.id !== eventId));
+      toast.success('Enrollment removed successfully');
+    } catch (error) {
+      toast.error('Failed to remove enrollment');
+    }
+    */
+
+    // Dummy remove enrollment logic
+    setEnrolledEvents(prev => prev.filter(event => event.id !== eventId));
+    toast.success('Enrollment removed successfully');
+  };
+
   return (
     <div className="admin-container">
-      <Navbar />
+      <OrganizerAdminNavbar />
       <h1 className="page-heading">Events</h1>
       <main className="main-content">
         <div className="events-container">
@@ -98,6 +116,13 @@ const OrganizerEvents = () => {
                           })}
                         >
                           Edit Event
+                        </button>
+                      ) : activeTab === 'enrolled' ? (
+                        <button 
+                          className="enroll-button"
+                          onClick={() => handleRemoveEnrollment(event.id)}
+                        >
+                          Remove Enrollment
                         </button>
                       ) : (
                         <button 

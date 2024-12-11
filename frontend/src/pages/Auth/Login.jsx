@@ -103,7 +103,7 @@ const Login = () => {
       if (user && user.role === formData.userType) {
         login(user);
         toast.success('Login successful!');
-        navigate(user.role === USER_ROLES.ATTENDEE ? '/events' : '/organizer-events');
+        navigate(user.role === USER_ROLES.ATTENDEE ? '/attendee-events' : '/organizer-events');
       } else {
         throw new Error('Invalid credentials');
       }

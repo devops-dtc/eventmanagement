@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { eventsData } from '../Auth/EventsData';
-import Navbar from '../../components/Layout/Navbar/Navbar';
+import Navbar from '../../components/Layout/Navbar/AttendeeNavbar';
 import TabButtons from '../../components/TabButtons/TabButtons';
 import '../../styles/Components.css';
 

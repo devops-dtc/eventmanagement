@@ -1,5 +1,6 @@
 // src/contexts/AuthContext.jsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { USER_ROLES } from '../utils/constants';
 
 const AuthContext = createContext(null);
 
@@ -20,45 +21,84 @@ export const AuthProvider = ({ children }) => {
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     } else {
-      setUser(anonymousUser); // Set anonymous user if no stored user
+      setUser(anonymousUser);
     }
     setLoading(false);
   }, []);
 
   const login = (userData) => {
+    // Validate user role
+    if (!userData.role || !Object.values(USER_ROLES).includes(userData.role)) {
+      throw new Error('Invalid user role');
+    }
+
+    // Ensure all required fields are present
+    const requiredFields = ['id', 'name', 'role', 'email'];
+    const missingFields = requiredFields.filter(field => !userData[field]);
+    
+    if (missingFields.length > 0) {
+      throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
+    }
+
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));
   };
 
   const logout = () => {
-    setUser(anonymousUser); // Set to anonymous instead of null
+    setUser(anonymousUser);
     localStorage.removeItem('user');
   };
 
-  // For testing purposes - modify to only set mock user if not anonymous
+  const isAuthenticated = () => {
+    return user && user.role !== 'Anonymous';
+  };
+
+  const hasRole = (roles) => {
+    if (!Array.isArray(roles)) {
+      roles = [roles];
+    }
+    return isAuthenticated() && roles.includes(user.role);
+  };
+
+  const updateUser = (updates) => {
+    const updatedUser = { ...user, ...updates };
+    setUser(updatedUser);
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+  };
+
+  // Mock user data for testing - you can comment this out in production
   useEffect(() => {
     if (user.role === 'Anonymous') {
-      // Uncomment the below code for testing with a mock user
       const mockUser = {
         id: '1',
         name: 'John Doe',
-        role: 'Attendee',
+        role: USER_ROLES.ATTENDEE, // or USER_ROLES.ORGANIZER for testing different roles
         email: 'john@example.com'
       };
       login(mockUser);
     }
   }, []);
 
-  const isAuthenticated = () => {
-    return user && user.role !== 'Anonymous';
-  };
-
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner">Loading...</div>
+      </div>
+    );
   }
 
+  const contextValue = {
+    user,
+    login,
+    logout,
+    isAuthenticated,
+    hasRole,
+    updateUser,
+    loading
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
@@ -71,3 +111,10 @@ export const useAuth = () => {
   }
   return context;
 };
+
+// Add PropTypes validation if you're using prop-types
+// AuthProvider.propTypes = {
+//   children: PropTypes.node.isRequired,
+// };
+
+export default AuthContext;
