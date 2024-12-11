@@ -1,0 +1,217 @@
+/* src/pages/Events/EditEvent.module.css */
+.edit-event-card {
+  background-color: white;
+  border-radius: 25px;
+  box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.25);
+  width: 70%;
+  max-width: 1200px;
+  margin: 60px auto;
+  padding: 35px;
+  position: relative;
+  min-height: 600px;
+}
+
+.content-wrapper {
+  margin-top: 20px; /* Reduced from 60px */
+  position: relative;
+  height: 100%;
+}
+
+.main-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.form-label {
+  color: black;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.input-box {
+  background-color: white;
+  border: 2px solid #d9d9d9;
+  border-radius: 15px;
+  padding: 12px 15px;
+}
+
+.input-text {
+  color: black;
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.venue-time-section,
+.venue-details-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.input-box.description {
+  min-height: 100px;
+}
+
+.edit-button-container {
+  position: absolute;
+  top: -20px; /* Adjusted to move button up */
+  right: 0;
+  width: 162px;
+}
+
+.edit-button {
+  background-color: black;
+  color: white;
+  border: none;
+  border-radius: 32px;
+  width: 157px;
+  height: 55px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-button:hover {
+  background-color: #333;
+}
+
+
+.input-text input,
+.input-text textarea {
+  width: 100%;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  line-height: 1.2;
+  background: transparent;
+}
+
+.input-text textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+
+/* In EditEvent.module.css */
+.editable-input {
+  width: 100%;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  line-height: 1.2;
+  background: transparent;
+  padding: 0;
+  font-family: inherit;
+}
+
+.editable-input:focus {
+  outline: none;
+}
+
+textarea.editable-input {
+  min-height: 100px;
+  resize: vertical;
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.input-box {
+  background-color: white;
+  border: 2px solid #d9d9d9;
+  border-radius: 15px;
+  padding: 12px 15px;
+}
+
+/* Remove any additional borders when editing */
+.input-box:focus-within {
+  border-color: #666;
+}
+
+/* In EditEvent.module.css */
+.input-box.description {
+  height: 100px; /* Fixed height */
+  overflow-y: auto; /* Add scroll if content exceeds height */
+}
+
+textarea.editable-input {
+  height: 100%; /* Take full height of parent */
+  resize: none; /* Prevent manual resizing */
+  overflow-y: auto; /* Add scroll if content exceeds height */
+}
+
+.input-text {
+  color: #666; /* Lighter color for placeholder text */
+}
+
+/* Style for actual content */
+.input-text:not(:empty) {
+  color: black; /* Darker color for actual content */
+}
+
+/* Optional: Style placeholders */
+.editable-input::placeholder {
+  color: #666;
+}
+
+/* Add to EditEvent.module.css */
+.editable-input[type="date"],
+.editable-input[type="time"] {
+  width: 100%;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  line-height: 1.2;
+  background: transparent;
+  padding: 0;
+  font-family: inherit;
+  color: black;
+}
+
+.editable-input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.editable-input[type="number"]::-webkit-outer-spin-button,
+.editable-input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+
+/* In EditEvent.module.css */
+.editable-input[type="time"] {
+  width: 100%;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  line-height: 1.2;
+  background: transparent;
+  padding: 0;
+  font-family: inherit;
+  color: black;
+}
+
+.editable-input[type="time"]::-webkit-calendar-picker-indicator {
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  float: right;
+}
+
+/* Optional: If you want to style the time picker icon */
+.editable-input[type="time"]::-webkit-time-picker-indicator {
+  filter: invert(0.5);
+}

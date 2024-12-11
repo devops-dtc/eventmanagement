@@ -67,17 +67,17 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Mock user data for testing - you can comment this out in production
-  useEffect(() => {
-    if (user.role === 'Anonymous') {
-      const mockUser = {
-        id: '1',
-        name: 'John Doe',
-        role: USER_ROLES.ATTENDEE, // or USER_ROLES.ORGANIZER for testing different roles
-        email: 'john@example.com'
-      };
-      login(mockUser);
-    }
-  }, []);
+  // useEffect(() => {
+  //   if (user.role === 'Anonymous') {
+  //     const mockUser = {
+  //       id: '1',
+  //       name: 'John Doe',
+  //       role: USER_ROLES.ATTENDEE, // or USER_ROLES.ORGANIZER for testing different roles
+  //       email: 'john@example.com'
+  //     };
+  //     login(mockUser);
+  //   }
+  // }, []);
 
   if (loading) {
     return (

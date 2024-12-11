@@ -4,11 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import { eventsData } from '../Auth/EventsData';
 import Navbar from '../../components/Layout/Navbar/AttendeeNavbar';
 import TabButtons from '../../components/TabButtons/TabButtons';
+import { toast } from 'react-toastify';
 import '../../styles/Components.css';
 
 const Events = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('upcoming');
+  const [enrolledEvents, setEnrolledEvents] = useState(eventsData.enrolled);
 
   const tabs = [
     { value: 'upcoming', label: 'Upcoming Events' },
@@ -23,7 +25,7 @@ const Events = () => {
   const getFilteredEvents = () => {
     switch(activeTab) {
       case 'enrolled':
-        return eventsData.enrolled;
+        return enrolledEvents;
       case 'upcoming':
       default:
         return eventsData.upcoming;
@@ -34,6 +36,23 @@ const Events = () => {
     navigate('/enrollment', { 
       state: { eventDetails: event }
     });
+  };
+
+  const handleRemoveEnrollment = (eventId) => {
+    // Backend remove enrollment logic (commented for future implementation)
+    /*
+    try {
+      await removeEventEnrollment(eventId);
+      setEnrolledEvents(prev => prev.filter(event => event.id !== eventId));
+      toast.success('Enrollment removed successfully');
+    } catch (error) {
+      toast.error('Failed to remove enrollment');
+    }
+    */
+
+    // Dummy remove enrollment logic
+    setEnrolledEvents(prev => prev.filter(event => event.id !== eventId));
+    toast.success('Enrollment removed successfully');
   };
 
   return (
@@ -78,7 +97,14 @@ const Events = () => {
                           </div>
                         </div>
                       </div>
-                      {activeTab === 'upcoming' && (
+                      {activeTab === 'enrolled' ? (
+                        <button 
+                          className="enroll-button"
+                          onClick={() => handleRemoveEnrollment(event.id)}
+                        >
+                          Remove Enrollment
+                        </button>
+                      ) : (
                         <button 
                           className="enroll-button"
                           onClick={() => handleNavigateToEnrollment(event)}

@@ -38,19 +38,15 @@ const OrganizerEvents = () => {
     });
   };
 
-  const handleRemoveEnrollment = (eventId) => {
-    // Backend remove enrollment logic (commented for future implementation)
-    /*
-    try {
-      await removeEventEnrollment(eventId);
-      setEnrolledEvents(prev => prev.filter(event => event.id !== eventId));
-      toast.success('Enrollment removed successfully');
-    } catch (error) {
-      toast.error('Failed to remove enrollment');
-    }
-    */
+  const handleEditEvent = (event, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigate('/edit-event', { 
+      state: { eventDetails: event }
+    });
+  };
 
-    // Dummy remove enrollment logic
+  const handleRemoveEnrollment = (eventId) => {
     setEnrolledEvents(prev => prev.filter(event => event.id !== eventId));
     toast.success('Enrollment removed successfully');
   };
@@ -111,9 +107,7 @@ const OrganizerEvents = () => {
                       {activeTab === 'created' ? (
                         <button 
                           className="edit-button"
-                          onClick={() => navigate(`/edit-event/${event.id}`, { 
-                            state: { eventDetails: event }
-                          })}
+                          onClick={(e) => handleEditEvent(event, e)}
                         >
                           Edit Event
                         </button>
