@@ -1,34 +1,30 @@
-// src/pages/Events/EditEvent.jsx
+// src/pages/Events/CreateEvent.jsx
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import AttendeeNavbar from '../../components/Layout/Navbar/AttendeeNavbar';
 import OrganizerAdminNavbar from '../../components/Layout/Navbar/OrganizerAdminNavbar';
 import { USER_ROLES } from '../../utils/constants';
 import { toast } from 'react-toastify';
-import styles from '../../styles/EditEvent.module.css';
+import styles from '../../styles/EditEvent.module.css'; // We can use the same styles
 import MessageDialog from '../../components/MessageDialog/MessageDialog';
 
-const EditEvent = () => {
+const CreateEvent = () => {
   const { user, isAuthenticated } = useAuth();
-  const location = useLocation();
   const navigate = useNavigate();
-  const [isEditing, setIsEditing] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   
-  const [eventData, setEventData] = useState(
-    location.state?.eventDetails || {
-      title: '',
-      date: '',
-      time: '',
-      endDate: '',
-      endTime: '',
-      location: '',
-      zip: '',
-      address: '',
-      description: ''
-    }
-  );
+  const [eventData, setEventData] = useState({
+    title: '',
+    date: '',
+    time: '',
+    endDate: '',
+    endTime: '',
+    location: '',
+    zip: '',
+    address: '',
+    description: ''
+  });
 
   if (!isAuthenticated()) {
     return <Navigate to="/login" />;
@@ -41,11 +37,6 @@ const EditEvent = () => {
     return <Navigate to="/attendee-events" />;
   }
 
-  if (!location.state?.eventDetails) {
-    toast.error('No event details provided');
-    return <Navigate to="/organizer-events" />;
-  }
-
   const handleInputChange = (field, value) => {
     setEventData(prev => ({
       ...prev,
@@ -53,37 +44,45 @@ const EditEvent = () => {
     }));
   };
 
-  const handleEditClick = () => {
-    if (isEditing) {
-      setShowConfirmDialog(true);
-    } else {
-      setIsEditing(true);
+  const handleCreateClick = () => {
+    // Validate required fields
+    const requiredFields = ['title', 'date', 'time', 'location', 'address'];
+    const missingFields = requiredFields.filter(field => !eventData[field]);
+
+    if (missingFields.length > 0) {
+      toast.error(`Please fill in the following fields: ${missingFields.join(', ')}`);
+      return;
     }
+
+    setShowConfirmDialog(true);
   };
 
-  const handleSaveConfirm = async () => {
+  const handleCreateConfirm = async () => {
     try {
-      const startDate = new Date(eventData.date);
-      const endDate = new Date(eventData.endDate);
-      
-      if (endDate < startDate) {
-        toast.error('End date cannot be before start date');
-        return;
+      if (eventData.endDate) {
+        const startDate = new Date(eventData.date);
+        const endDate = new Date(eventData.endDate);
+        
+        if (endDate < startDate) {
+          toast.error('End date cannot be before start date');
+          return;
+        }
       }
 
+      // Here you would make your API call to create the event
       await new Promise(resolve => setTimeout(resolve, 1000));
-      toast.success('Event updated successfully');
+      toast.success('Event created successfully');
       navigate('/organizer-events', { 
         state: { activeTab: 'created' }
       });
     } catch (error) {
-      toast.error('Failed to update event');
+      toast.error('Failed to create event');
     } finally {
       setShowConfirmDialog(false);
     }
   };
 
-  const handleSaveCancel = () => {
+  const handleCreateCancel = () => {
     setShowConfirmDialog(false);
   };
 
@@ -122,16 +121,13 @@ const EditEvent = () => {
     <div className={styles['form-group']}>
       <label className={styles['form-label']}>{label}</label>
       <div className={styles['input-box']}>
-        {isEditing ? (
-          <input
-            type="date"
-            value={value || ''}
-            onChange={(e) => handleInputChange(field, e.target.value)}
-            className={styles['editable-input']}
-          />
-        ) : (
-          <div className={styles['input-text']}>{value || placeholder}</div>
-        )}
+        <input
+          type="date"
+          value={value || ''}
+          onChange={(e) => handleInputChange(field, e.target.value)}
+          className={styles['editable-input']}
+          placeholder={placeholder}
+        />
       </div>
     </div>
   );
@@ -140,31 +136,26 @@ const EditEvent = () => {
     <div className={styles['form-group']}>
       <label className={styles['form-label']}>{label}</label>
       <div className={styles['input-box']}>
-        {isEditing ? (
-          <input
-            type="time"
-            value={convertTo24Hour(value) || ''}
-            onChange={(e) => {
-              const time24 = e.target.value;
-              if (time24) {
-                const date = new Date(`2000-01-01T${time24}`);
-                const timeString = date.toLocaleTimeString('en-US', {
-                  hour: 'numeric',
-                  minute: '2-digit',
-                  hour12: true
-                });
-                handleInputChange(field, timeString);
-              } else {
-                handleInputChange(field, '');
-              }
-            }}
-            className={styles['editable-input']}
-          />
-        ) : (
-          <div className={styles['input-text']}>
-            {formatTimeForDisplay(value) || placeholder}
-          </div>
-        )}
+        <input
+          type="time"
+          value={convertTo24Hour(value) || ''}
+          onChange={(e) => {
+            const time24 = e.target.value;
+            if (time24) {
+              const date = new Date(`2000-01-01T${time24}`);
+              const timeString = date.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+              });
+              handleInputChange(field, timeString);
+            } else {
+              handleInputChange(field, '');
+            }
+          }}
+          className={styles['editable-input']}
+          placeholder={placeholder}
+        />
       </div>
     </div>
   );
@@ -173,17 +164,13 @@ const EditEvent = () => {
     <div className={styles['form-group']}>
       <label className={styles['form-label']}>{label}</label>
       <div className={styles['input-box']}>
-        {isEditing ? (
-          <input
-            type={type}
-            value={value || ''}
-            placeholder={placeholder}
-            onChange={(e) => handleInputChange(field, e.target.value)}
-            className={styles['editable-input']}
-          />
-        ) : (
-          <div className={styles['input-text']}>{value || placeholder}</div>
-        )}
+        <input
+          type={type}
+          value={value || ''}
+          placeholder={placeholder}
+          onChange={(e) => handleInputChange(field, e.target.value)}
+          className={styles['editable-input']}
+        />
       </div>
     </div>
   );
@@ -191,7 +178,7 @@ const EditEvent = () => {
   return (
     <div className="admin-container">
       {isAdminOrOrganizer ? <OrganizerAdminNavbar /> : <AttendeeNavbar />}
-      <h1 className="page-heading">Edit Event</h1>
+      <h1 className="page-heading">Create Event</h1>
       <div className={styles['edit-event-card']}>
         <div className={styles['content-wrapper']}>
           <div className={styles['main-content']}>
@@ -213,18 +200,12 @@ const EditEvent = () => {
             <div className={styles['form-group']}>
               <label className={styles['form-label']}>Description</label>
               <div className={`${styles['input-box']} ${styles['description']}`}>
-                {isEditing ? (
-                  <textarea
-                    value={eventData.description || ''}
-                    placeholder="Enter event description"
-                    onChange={(e) => handleInputChange('description', e.target.value)}
-                    className={styles['editable-input']}
-                  />
-                ) : (
-                  <div className={styles['input-text']}>
-                    {eventData.description || 'Enter event description'}
-                  </div>
-                )}
+                <textarea
+                  value={eventData.description || ''}
+                  placeholder="Enter event description"
+                  onChange={(e) => handleInputChange('description', e.target.value)}
+                  className={styles['editable-input']}
+                />
               </div>
             </div>
           </div>
@@ -232,9 +213,9 @@ const EditEvent = () => {
           <div className={styles['edit-button-container']}>
             <button 
               className={styles['edit-button']}
-              onClick={handleEditClick}
+              onClick={handleCreateClick}
             >
-              {isEditing ? 'Save Changes' : 'Edit Event'}
+              Create Event
             </button>
           </div>
         </div>
@@ -242,14 +223,14 @@ const EditEvent = () => {
 
       {showConfirmDialog && (
         <MessageDialog
-          messageHeading="Save Changes?"
-          messageResponse="Save"
-          onSave={handleSaveConfirm}
-          onCancel={handleSaveCancel}
+          messageHeading="Create Event?"
+          messageResponse="Create"
+          onSave={handleCreateConfirm}
+          onCancel={handleCreateCancel}
         />
       )}
     </div>
   );
 };
 
-export default EditEvent;
+export default CreateEvent;

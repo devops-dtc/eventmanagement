@@ -10,6 +10,7 @@ import OrganizerEvents from './pages/Events/OrganizerEvents';
 import Home from './pages/Home/Home';
 import Login from './pages/Auth/Login';
 import EditEvent from './pages/EventManagement/EditEvent';
+import CreateEvent from './pages/EventManagement/CreateEvent';
 
 const App = () => {
   return (
@@ -24,7 +25,7 @@ const App = () => {
           <Route path="/enrollment" element={<Enrollment />} />
           <Route path="/organizer-events" element={<OrganizerEvents />} />
           <Route path="/edit-event" element={<EditEvent />} />
-          
+          <Route path="/create-event" element={<CreateEvent />} />
 
         </Routes>
         <ToastContainer />
