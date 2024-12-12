@@ -1,0 +1,177 @@
+{
+    "published": [
+      {
+        "id": 1,
+        "title": "Microsoft Azure Workshop",
+        "type": "Online",
+        "organizer": "david.tech@gmail.com",
+        "startTime": "10 Dec 7:00 a.m.",
+        "endTime": "10 Dec 9:00 a.m.",
+        "attendees": "128",
+        "status": "Published",
+        "description": "Deep dive into Azure cloud services",
+        "location": "Virtual",
+        "date": "2023-12-10"
+      },
+      {
+        "id": 2,
+        "title": "Flutter Development Conference",
+        "type": "Hybrid",
+        "organizer": "sarah.mobile@gmail.com",
+        "startTime": "15 Dec 9:00 a.m.",
+        "endTime": "15 Dec 5:00 p.m.",
+        "attendees": "312",
+        "status": "Published",
+        "description": "Latest in cross-platform development",
+        "location": "Tech Hub & Virtual"
+      },
+      {
+        "id": 3,
+        "title": "Google Cloud Summit",
+        "type": "Physical",
+        "organizer": "john.cloud@gmail.com",
+        "startTime": "18 Dec 10:00 a.m.",
+        "endTime": "19 Dec 4:00 p.m.",
+        "attendees": "521",
+        "status": "Published",
+        "location": "Convention Center"
+      },
+      {
+        "id": 4,
+        "title": "AI/ML Bootcamp",
+        "type": "Online",
+        "organizer": "maria.ai@gmail.com",
+        "startTime": "20 Dec 2:00 p.m.",
+        "endTime": "22 Dec 6:00 p.m.",
+        "attendees": "245",
+        "status": "Published",
+        "location": "Virtual"
+      },
+      {
+        "id": 5,
+        "title": "Cybersecurity Summit 2023",
+        "type": "Hybrid",
+        "organizer": "alex.secure@gmail.com",
+        "startTime": "23 Dec 9:00 a.m.",
+        "endTime": "23 Dec 6:00 p.m.",
+        "attendees": "189",
+        "status": "Published",
+        "location": "Security Center & Virtual"
+      }
+    ],
+    "unpublished": [
+      {
+        "id": 6,
+        "title": "DevOps Best Practices",
+        "type": "Online",
+        "organizer": "chris.devops@gmail.com",
+        "startTime": "5 Jan 11:00 a.m.",
+        "endTime": "5 Jan 4:00 p.m.",
+        "attendees": "0",
+        "status": "Unpublished",
+        "location": "Virtual"
+      },
+      {
+        "id": 7,
+        "title": "Web3 Development Workshop",
+        "type": "Physical",
+        "organizer": "emma.blockchain@gmail.com",
+        "startTime": "8 Jan 10:00 a.m.",
+        "endTime": "9 Jan 5:00 p.m.",
+        "attendees": "0",
+        "status": "Unpublished",
+        "location": "Innovation Hub"
+      },
+      {
+        "id": 8,
+        "title": "UX/UI Design Conference",
+        "type": "Hybrid",
+        "organizer": "peter.design@gmail.com",
+        "startTime": "12 Jan 9:00 a.m.",
+        "endTime": "12 Jan 6:00 p.m.",
+        "attendees": "0",
+        "status": "Unpublished",
+        "location": "Design Center & Virtual"
+      },
+      {
+        "id": 9,
+        "title": "Mobile App Security Workshop",
+        "type": "Online",
+        "organizer": "lisa.security@gmail.com",
+        "startTime": "15 Jan 2:00 p.m.",
+        "endTime": "15 Jan 5:00 p.m.",
+        "attendees": "0",
+        "status": "Unpublished",
+        "location": "Virtual"
+      },
+      {
+        "id": 10,
+        "title": "Data Science Symposium",
+        "type": "Physical",
+        "organizer": "mike.data@gmail.com",
+        "startTime": "18 Jan 8:00 a.m.",
+        "endTime": "19 Jan 4:00 p.m.",
+        "attendees": "0",
+        "status": "Unpublished",
+        "location": "Analytics Center"
+      }
+    ],
+    "pendingApproval": [
+      {
+        "id": 11,
+        "title": "React Native Masterclass",
+        "type": "Online",
+        "organizer": "rachel.mobile@gmail.com",
+        "startTime": "25 Jan 10:00 a.m.",
+        "endTime": "26 Jan 4:00 p.m.",
+        "attendees": "0",
+        "status": "Needs Approval",
+        "location": "Virtual"
+      },
+      {
+        "id": 12,
+        "title": "Blockchain Technology Summit",
+        "type": "Hybrid",
+        "organizer": "steve.crypto@gmail.com",
+        "startTime": "1 Feb 9:00 a.m.",
+        "endTime": "2 Feb 5:00 p.m.",
+        "attendees": "0",
+        "status": "Needs Approval",
+        "location": "Crypto Hub & Virtual"
+      },
+      {
+        "id": 13,
+        "title": "Python for Data Analysis",
+        "type": "Physical",
+        "organizer": "anna.python@gmail.com",
+        "startTime": "5 Feb 11:00 a.m.",
+        "endTime": "5 Feb 6:00 p.m.",
+        "attendees": "0",
+        "status": "Needs Approval",
+        "location": "Learning Center"
+      },
+      {
+        "id": 14,
+        "title": "Cloud Native Architecture",
+        "type": "Online",
+        "organizer": "tom.cloud@gmail.com",
+        "startTime": "8 Feb 2:00 p.m.",
+        "endTime": "9 Feb 5:00 p.m.",
+        "attendees": "0",
+        "status": "Needs Approval",
+        "location": "Virtual"
+      },
+      {
+        "id": 15,
+        "title": "IoT Development Workshop",
+        "type": "Hybrid",
+        "organizer": "jenny.iot@gmail.com",
+        "startTime": "12 Feb 10:00 a.m.",
+        "endTime": "13 Feb 4:00 p.m.",
+        "attendees": "0",
+        "status": "Needs Approval",
+        "location": "IoT Lab & Virtual"
+      }
+    ]
+  }
+  

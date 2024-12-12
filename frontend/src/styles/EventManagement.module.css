@@ -1,0 +1,332 @@
+/* src/styles/EventManagement.module.css */
+.adminContainer {
+    overflow: hidden;
+    height: 100vh;
+    font-family: 'Inter', sans-serif;
+  }
+  
+  .pageContainer {
+    padding: 20px;
+    height: calc(100vh - 64px);
+    background-color: #f5f5f5;
+    overflow: hidden;
+  }
+  
+  .headerSection {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding: 0 20px;
+  }
+  
+  .pageTitle {
+    font-family: 'Inter', sans-serif;
+    font-size: 32px;
+    font-weight: 600;
+    color: #333;
+  }
+  
+  .managementTabs {
+    display: flex;
+    gap: 0;
+    background: #e7e7e7;
+    border-radius: 12px;
+    padding: 4px;
+  }
+  
+  .managementTabs button {
+    padding: 8px 20px;
+    border: none;
+    background: none;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .managementTabs button:first-child {
+    border-radius: 8px 0 0 8px;
+  }
+  
+  .managementTabs button:last-child {
+    border-radius: 0 8px 8px 0;
+  }
+  
+  .managementTabs button.active {
+    background: #454545;
+    color: white;
+  }
+  
+  .managementTabs button:hover:not(.active) {
+    background: #d1d1d1;
+  }
+  
+  .contentContainer {
+    padding: 0 20px;
+    height: calc(100vh - 160px);
+    overflow: hidden;
+  }
+  
+  .whiteContainer {
+    background: white;
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    height: calc(100% - 24px);
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+  
+  .tabSection {
+    flex: 0 0 auto;
+  }
+  
+  .actionSection {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  
+  .searchBox input {
+    padding: 10px 16px;
+    border: 2px solid #333;
+    border-radius: 12px;
+    width: 240px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+  }
+  
+  .addButton {
+    background: #000;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 24px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  
+  .deleteButton {
+    background: #ccc;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 24px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    cursor: not-allowed;
+    white-space: nowrap;
+  }
+  
+  .deleteButton.active {
+    background: #000;
+    cursor: pointer;
+  }
+  
+  .tableContainer {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    margin-right: -8px;
+    padding-right: 8px;
+  }
+  
+  .table {
+    width: 100%;
+    border-spacing: 0;
+    border-collapse: separate;
+    border-radius: 12px;
+    table-layout: fixed;
+    font-family: 'Inter', sans-serif;
+  }
+  
+  .table th,
+  .table td {
+    padding: 16px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    height: 60px;
+    vertical-align: middle;
+    font-size: 14px;
+  }
+  
+  .table th {
+    color: #666;
+    font-weight: 500;
+    background: white;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+  
+  .checkbox {
+    width: 40px;
+    text-align: center;
+  }
+  
+  .checkbox input {
+    cursor: pointer;
+  }
+  
+  .status {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  
+  .published {
+    background: #e7e7e7;
+    color: #454545;
+  }
+  
+  .unpublished {
+    background: #f5f5f5;
+    color: #666;
+  }
+  
+  .needs-approval {
+    background: #fff4e5;
+    color: #663c00;
+  }
+  
+  .actionButton {
+    background: #000;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  
+  .actionButton:hover {
+    background: #333;
+  }
+  
+  .menuButton {
+    border: none;
+    background: none;
+    font-size: 20px;
+    color: #666;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .menuCell {
+    padding-right: 8px !important;
+    text-align: right;
+    width: 40px;
+  }
+  
+  .optionsMenu {
+    min-width: 150px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+  }
+  
+  .optionsMenu button {
+    display: block;
+    width: 100%;
+    padding: 12px 20px;
+    border: none;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+    color: #666;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  
+  .optionsMenu button:first-child {
+    border-bottom: 1px solid #eee;
+  }
+  
+  .optionsMenu button:hover {
+    background: #f5f5f5;
+  }
+  
+  /* Column widths */
+  .table colgroup col:nth-child(1) { width: 40px; }
+  .table colgroup col:nth-child(2) { width: 20%; }
+  .table colgroup col:nth-child(3) { width: 10%; }
+  .table colgroup col:nth-child(4) { width: 20%; }
+  .table colgroup col:nth-child(5) { width: 12%; }
+  .table colgroup col:nth-child(6) { width: 12%; }
+  .table colgroup col:nth-child(7) { width: 8%; }
+  .table colgroup col:nth-child(8) { width: 100px; }
+  .table colgroup col:nth-child(9) { width: 40px; }
+  
+  /* Responsive */
+  @media (max-width: 1024px) {
+    .searchBox input {
+      width: 200px;
+    }
+  
+    .headerSection {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
+    }
+  
+    .managementTabs {
+      width: 100%;
+      justify-content: flex-end;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .pageContainer {
+      padding: 10px;
+    }
+  
+    .pageTitle {
+      font-size: 28px;
+    }
+  
+    .header {
+      flex-direction: column;
+      gap: 16px;
+    }
+  
+    .actionSection {
+      width: 100%;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+  
+    .tableContainer {
+      overflow-x: auto;
+    }
+  
+    .managementTabs {
+      justify-content: flex-start;
+    }
+  }
+  

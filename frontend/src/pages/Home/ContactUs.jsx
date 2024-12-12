@@ -47,7 +47,7 @@ const ContactUs = () => {
               <div className={styles.githubSection}>
                 <h2 className={styles.sectionTitle}>Project Repository</h2>
                 <a 
-                  href="https://github.com/yourusername/your-repo-name" 
+                  href="https://github.com/devops-dtc/eventmanagement" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className={styles.githubLink}

@@ -1,10 +1,11 @@
 // src/components/MessageDialog/MessageDialog.jsx
 import React from 'react';
-import  styles from '../../styles/MessageDialog.module.css';
+import styles from '../../styles/MessageDialog.module.css';
 
 const MessageDialog = ({ 
-  messageHeading = "Edit Changes?", 
-  messageResponse = "Save Edit",
+  messageHeading, 
+  messageResponse,
+  messageResponse2 = "Cancel",  // Second response with default value
   onSave,
   onCancel 
 }) => {
@@ -19,7 +20,7 @@ const MessageDialog = ({
                 <div className={styles.buttonText}>{messageResponse}</div>
               </button>
               <button className={styles.cancelButton} onClick={onCancel}>
-                <div className={styles.buttonText}>Cancel</div>
+                <div className={styles.buttonText}>{messageResponse2}</div>
               </button>
             </div>
           </div>
