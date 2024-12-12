@@ -1,4 +1,4 @@
-// src/services/auth.service.js
+/*// src/services/auth.service.js
 
 // Mock API delay
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -46,35 +46,28 @@ export const loginUser = async (credentials) => {
   } catch (error) {
     throw new Error(error.message || 'Login failed');
   }
-};
+};*/
 
 
 //Service Code for Later
 
-// import axios from 'axios';
-// import { API_ENDPOINTS } from '../utils/constants';
+import axios from 'axios';
 
-// const api = axios.create({
-//   baseURL: process.env.REACT_APP_API_URL
-// });
-
-// export const registerUser = async (userData) => {
-//   try {
-//     const response = await api.post(API_ENDPOINTS.REGISTER, userData);
-//     return response.data;
-//   } catch (error) {
-//     throw new Error(error.response?.data?.message || 'Registration failed');
-//   }
-// };
-
-// export const loginUser = async (credentials) => {
-//   try {
-//     const response = await api.post(API_ENDPOINTS.LOGIN, credentials);
-//     if (response.data.token) {
-//       localStorage.setItem('token', response.data.token);
-//     }
-//     return response.data;
-//   } catch (error) {
-//     throw new Error(error.response?.data?.message || 'Login failed');
-//   }
-// };
+const API_URL = 'http://localhost:3000';
+export const registerUser = async (userDetails) => {
+  try {
+    const response = await axios.post(`${API_URL}/registerUser`, {
+      UserType: userDetails.userType,
+      UserFullName: userDetails.fullname,
+      UserEmail: userDetails.email,
+      UserPassword: userDetails.password,
+    });
+    return response.data;
+  } catch (error) {
+    if (error.response && error.response.data) {
+      throw new Error(error.response.data.message || 'Error registering user');
+    } else {
+      throw new Error('Network dhn');
+    }
+  }
+};

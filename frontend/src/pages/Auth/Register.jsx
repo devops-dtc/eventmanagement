@@ -7,6 +7,8 @@ import Button from '../../components/Button/Button';
 import { USER_ROLES } from '../../utils/constants';
 import { useAuth } from '../../contexts/AuthContext';
 import '../../styles/Register.css';
+import { registerUser } from "../../services/auth.service";
+
 
 const Register = () => {
   const navigate = useNavigate();
@@ -56,47 +58,22 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+  
     if (!validateForm()) return;
-
+  
     setIsLoading(true);
-
-    // Backend registration logic (commented for future implementation)
-    /*
+  
     try {
       const response = await registerUser(formData);
-      login(response.user);
-      toast.success('Registration successful!');
-      navigate(response.user.role === USER_ROLES.ATTENDEE ? '/events' : '/organizer-events');
-    } catch (error) {
-      toast.error(error.message);
-      setErrors(prev => ({
-        ...prev,
-        submit: error.message
-      }));
-    }
-    */
-
-    // Dummy registration logic
-    try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      const newUser = {
-        id: Date.now().toString(),
-        name: formData.fullname,
-        email: formData.email,
-        role: formData.userType
-      };
-
+      const newUser = response;
       login(newUser);
       toast.success('Registration successful!');
       navigate(newUser.role === USER_ROLES.ATTENDEE ? '/events' : '/organizer-events');
     } catch (error) {
       toast.error(error.message);
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        submit: error.message
+        submit: error.message,
       }));
     } finally {
       setIsLoading(false);
