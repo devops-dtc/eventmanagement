@@ -15,6 +15,7 @@ const EditEvent = () => {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const sourceRoute = location.state?.sourceRoute || '/organizer-events';
   
   const [eventData, setEventData] = useState(
     location.state?.eventDetails || {
@@ -43,7 +44,7 @@ const EditEvent = () => {
 
   if (!location.state?.eventDetails) {
     toast.error('No event details provided');
-    return <Navigate to="/organizer-events" />;
+    return <Navigate to={sourceRoute} />;
   }
 
   const handleInputChange = (field, value) => {
@@ -73,8 +74,10 @@ const EditEvent = () => {
 
       await new Promise(resolve => setTimeout(resolve, 1000));
       toast.success('Event updated successfully');
-      navigate('/organizer-events', { 
-        state: { activeTab: 'created' }
+      
+      // Navigate back to the source route
+      navigate(sourceRoute, { 
+        state: { activeTab: location.state?.activeTab || 'created' }
       });
     } catch (error) {
       toast.error('Failed to update event');
@@ -244,6 +247,7 @@ const EditEvent = () => {
         <MessageDialog
           messageHeading="Save Changes?"
           messageResponse="Save"
+          messageResponse2="Cancel"
           onSave={handleSaveConfirm}
           onCancel={handleSaveCancel}
         />

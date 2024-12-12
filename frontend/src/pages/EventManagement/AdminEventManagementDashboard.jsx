@@ -142,10 +142,15 @@ const EventManagement = () => {
   const handleEditEvent = (eventId) => {
     const eventToEdit = currentEvents.find(event => event.id === eventId);
     navigate('/edit-event', { 
-      state: { eventDetails: eventToEdit }
+      state: { 
+        eventDetails: eventToEdit,
+        sourceRoute: '/event-management',
+        activeTab: activeTab
+      }
     });
     setShowOptionsMenu({ show: false, eventId: null, x: 0, y: 0 });
   };
+  
 
   const handleManageUsers = (eventId) => {
     navigate(`/manage-users/${eventId}`);
