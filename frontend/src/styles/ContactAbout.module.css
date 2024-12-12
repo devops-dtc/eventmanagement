@@ -1,0 +1,206 @@
+/* src/styles/ContactAbout.module.css */
+.contentSection {
+    width: 100%;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+  
+  /* About Us specific styles */
+  .introSection {
+    margin-bottom: 40px;
+  }
+  
+  .introText {
+    font-size: 1.1rem;
+    color: #666;
+    line-height: 1.8;
+    margin-bottom: 30px;
+  }
+  
+  .missionVisionSection {
+    margin-bottom: 40px;
+  }
+  
+  .mainTitle {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 30px;
+  }
+  
+  .sectionTitle {
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 20px;
+  }
+  
+  .sectionText {
+    font-size: 1.1rem;
+    color: #666;
+    line-height: 1.6;
+    margin-bottom: 30px;
+  }
+  
+  /* Contact Us specific styles */
+  .contactInfo {
+    margin-bottom: 40px;
+  }
+  
+  .infoItem {
+    margin-bottom: 15px;
+  }
+  
+  .label {
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: #333;
+    display: block;
+    margin-bottom: 8px;
+  }
+  
+  .value {
+    font-size: 1.1rem;
+    color: #666;
+  }
+  
+  /* Image styles */
+  .imageSection {
+    margin-left: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .imageContainer {
+    width: 400px;
+    height: 225px;
+    border-radius: 20px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f5f5f5;
+    margin-bottom: 20px;
+    border: 2px solid #ddd;
+  }
+  
+  .contactImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  /* GitHub section styles */
+  .githubSection {
+    margin-top: 40px;
+  }
+  
+  .githubLink {
+    display: inline-flex;
+    align-items: center;
+    padding: 12px 24px;
+    background-color: #24292e;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: background-color 0.3s ease;
+    font-size: 1.1rem;
+  }
+  
+  .githubLink:hover {
+    background-color: #2f363d;
+  }
+  
+  .githubIcon {
+    font-size: 24px;
+    margin-right: 10px;
+  }
+  
+  /* Responsive styles */
+  @media (max-width: 1024px) {
+    .imageContainer {
+      width: 320px;
+      height: 180px;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .contentSection {
+      padding: 15px;
+    }
+  
+    .mainTitle {
+      font-size: 1.8rem;
+    }
+  
+    .introText,
+    .sectionText,
+    .value {
+      font-size: 1rem;
+    }
+  
+    .sectionTitle {
+      font-size: 1.3rem;
+    }
+  
+    .githubLink {
+      padding: 10px 20px;
+      font-size: 1rem;
+    }
+  
+    .githubIcon {
+      font-size: 20px;
+    }
+  
+    .imageContainer {
+      width: 280px;
+      height: 157.5px;
+    }
+  
+    .imageSection {
+      margin-left: 20px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .contentSection {
+      padding: 10px;
+    }
+  
+    .mainTitle {
+      font-size: 1.6rem;
+    }
+  
+    .sectionTitle {
+      font-size: 1.2rem;
+    }
+  
+    .introText,
+    .sectionText,
+    .label,
+    .value {
+      font-size: 0.95rem;
+    }
+  
+    .githubLink {
+      padding: 8px 16px;
+      font-size: 0.95rem;
+    }
+  
+    .githubIcon {
+      font-size: 18px;
+    }
+  
+    .imageContainer {
+      width: 240px;
+      height: 135px;
+    }
+  
+    .imageSection {
+      margin-left: 10px;
+    }
+  }
+  

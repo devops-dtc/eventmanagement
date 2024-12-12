@@ -1,0 +1,101 @@
+/* src/components/MessageDialog/MessageDialog.module.css */
+.messageOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.messageContainer {
+  width: 578px;
+  height: 291px;
+}
+
+.messageCard {
+  width: 100%;
+  height: 100%;
+  background-color: #f94b3e;
+  border-radius: 45px;
+  box-shadow: 0 0 4px 3px rgba(0, 0, 0, 0.25);
+  position: relative;
+}
+
+.messageContent {
+  position: absolute;
+  top: 55px;
+  left: 51px;
+  width: 444px;
+  height: 176px;
+}
+
+.heading {
+  color: white;
+  font-weight: bold;
+  font-size: 40px;
+  line-height: 1.2;
+  position: absolute;
+  top: 0;
+  left: 97px;
+  width: 302px;
+  height: 53px;
+  text-align: center;
+}
+
+.buttonContainer {
+  position: absolute;
+  top: 111px;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+}
+
+.saveButton, 
+.cancelButton {
+  border: none;
+  cursor: pointer;
+}
+
+.saveButton {
+  position: relative;
+  width: 184px;
+  height: 65px;
+  background-color: #d9d9d9;
+  border-radius: 32.72px;
+}
+
+.cancelButton {
+  position: relative;
+  width: 178px;
+  height: 63px;
+  background-color: #d9d9d9;
+  border-radius: 31.6px;
+}
+
+.buttonText {
+  color: #f94b3e;
+  font-weight: bold;
+  font-size: 32px;
+  line-height: 1.2;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.saveButton .buttonText {
+  width: 152px;
+  height: 36px;
+}
+
+.cancelButton .buttonText {
+  width: 117px;
+  height: 35px;
+}

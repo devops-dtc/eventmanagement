@@ -18,13 +18,13 @@ const Enrollment = () => {
   const isAdminOrOrganizer = user?.role === USER_ROLES.SUPER_ADMIN || 
                             user?.role === USER_ROLES.ORGANIZER;
 
-//   if (!user) {
-//     return <Navigate to="/" />;
-//   }
+    if (!user) {
+      return <Navigate to="/" />;
+    }
 
-//   if (!eventDetails) {
-//     return <Navigate to="/events" />;
-//   }
+    if (!eventDetails) {
+      return <Navigate to="/events" />;
+    }
 
   const handleEnroll = async () => {
     setIsEnrolling(true);

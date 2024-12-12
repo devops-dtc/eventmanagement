@@ -11,6 +11,9 @@ import Home from './pages/Home/Home';
 import Login from './pages/Auth/Login';
 import EditEvent from './pages/EventManagement/EditEvent';
 import CreateEvent from './pages/EventManagement/CreateEvent';
+import Profile from './pages/Profile/Profile';
+import AboutUs from './pages/Home/AboutUs';
+import ContactUs from './pages/Home/ContactUs';
 
 const App = () => {
   return (
@@ -26,6 +29,9 @@ const App = () => {
           <Route path="/organizer-events" element={<OrganizerEvents />} />
           <Route path="/edit-event" element={<EditEvent />} />
           <Route path="/create-event" element={<CreateEvent />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/about" element={<AboutUs />} />
+          <Route path="/contact" element={<ContactUs />} />
 
         </Routes>
         <ToastContainer />
