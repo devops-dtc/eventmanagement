@@ -9,6 +9,7 @@ import { toast } from 'react-toastify';
 import { USER_ROLES } from '../../utils/constants';
 import '../../styles/Components.css';
 import '../../styles/OrganizerEvents.css';
+import { eventService } from '../../services/event.service';
 
 const HomePage = () => {
   const navigate = useNavigate();

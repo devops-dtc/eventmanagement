@@ -6,6 +6,7 @@ import FormInput from '../../components/FormInput/FormInput';
 import Button from '../../components/Button/Button';
 import { USER_ROLES } from '../../utils/constants';
 import { useAuth } from '../../contexts/AuthContext';
+import api from '../../services/api'; // Add this import
 import '../../styles/Register.css';
 
 const Login = () => {
@@ -57,46 +58,50 @@ const Login = () => {
 
     setIsLoading(true);
 
-    // Dummy login logic
     try {
-      const dummyUsers = {
-        'attendee@test.com': { 
-          id: '1', 
-          name: 'Test Attendee', 
-          role: USER_ROLES.ATTENDEE, 
-          email: 'attendee@test.com' 
-        },
-        'organizer@test.com': { 
-          id: '2', 
-          name: 'Test Organizer', 
-          role: USER_ROLES.ORGANIZER, 
-          email: 'organizer@test.com' 
-        },
-        'admin@test.com': { 
-          id: '3', 
-          name: 'Test Admin', 
-          role: USER_ROLES.SUPER_ADMIN, 
-          email: 'admin@test.com' 
-        }
+      // Call your backend API
+      const response = await api.post('/auth/login', {
+        email: formData.email,
+        password: formData.password,
+        userType: formData.userType
+      });
+
+      // Format the user data to match your frontend structure
+      const userData = {
+        id: response.data.user.UserID,
+        name: response.data.user.UserFullname,
+        role: response.data.user.UserType,
+        email: response.data.user.UserEmail
       };
 
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Store the token
+      localStorage.setItem('token', response.data.token);
 
-      const user = dummyUsers[formData.email];
-      if (user && user.role === formData.userType) {
-        login(user);
-        toast.success('Login successful!');
-        // Redirect to home page for all user types
-        navigate('/');
-      } else {
-        throw new Error('Invalid credentials');
+      // Login using context
+      login(userData);
+      
+      toast.success('Login successful!');
+
+      // Redirect based on user role
+      switch (userData.role) {
+        case USER_ROLES.SUPER_ADMIN:
+          navigate('/admin-dashboard');
+          break;
+        case USER_ROLES.ORGANIZER:
+          navigate('/organizer-dashboard');
+          break;
+        case USER_ROLES.ATTENDEE:
+          navigate('/home');
+          break;
+        default:
+          navigate('/');
       }
     } catch (error) {
-      toast.error(error.message);
+      console.error('Login error:', error);
+      toast.error(error.response?.data?.message || 'Invalid credentials');
       setErrors(prev => ({
         ...prev,
-        submit: error.message
+        submit: error.response?.data?.message || 'Login failed'
       }));
     } finally {
       setIsLoading(false);
