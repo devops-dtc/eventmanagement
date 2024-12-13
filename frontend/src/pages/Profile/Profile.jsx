@@ -8,7 +8,7 @@ import { USER_ROLES } from '../../utils/constants';
 import { toast } from 'react-toastify';
 import MessageDialog from '../../components/MessageDialog/MessageDialog';
 import '../../styles/Enrollment.css';
-import styles from '../../Styles/Profile.module.css';
+import styles from '../../styles/Profile.module.css';
 
 
 const Profile = () => {
