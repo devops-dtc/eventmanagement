@@ -43,20 +43,17 @@ export const login= async (req, res) => {
     }
 };
 
-
 // Register user endpoint
-export const signup= async (req, res) => {
+export const signup = async (req, res) => {
     const { UserFullName, UserEmail, UserPassword, UserType } = req.body;
 
-    // Validate input
     if (!UserFullName || !UserEmail || !UserPassword || !UserType) {
         return res.status(400).json({ message: 'All fields are required' });
     }
 
     try {
-        // Insert user into the database
         const query = "INSERT INTO `user` (UserFullName, UserEmail, UserPassword, UserType) VALUES (?, ?, ?, ?)";
-        await db.promise().query(query, [UserFullName, UserEmail, UserPassword, UserType]);
+        await db.query(query, [UserFullName, UserEmail, UserPassword, UserType]);
         res.status(201).json({ message: 'User registered successfully' });
     } catch (error) {
         console.error("Error registering user:", error);
