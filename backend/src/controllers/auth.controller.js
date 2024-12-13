@@ -1,5 +1,6 @@
+import {db} from '../config/database.js';
 // Login endpoint
-exports.login= async (req, res) => {
+export const login= async (req, res) => {
     const details = {
         UserID: 1,
         UserFullName: 'Sreyan Dey',
@@ -44,7 +45,7 @@ exports.login= async (req, res) => {
 
 
 // Register user endpoint
-exports.signup= async (req, res) => {
+export const signup= async (req, res) => {
     const { UserFullName, UserEmail, UserPassword, UserType } = req.body;
 
     // Validate input

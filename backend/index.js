@@ -1,8 +1,7 @@
 import express from 'express';
 import axios, { isAxiosError } from 'axios';
-import {db} from './src/config/database';
 import cors from 'cors';
-import {authroutes} from './src/routes/auth.routes'; 
+import {authroutes} from './src/routes/auth.routes.js'; 
 
 const app = express();
 const port = 3000;
