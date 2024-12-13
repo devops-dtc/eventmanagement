@@ -17,7 +17,7 @@ app.use(cors({
 }));
 
 
-app.use('/auth', authRouter);
+app.use('/auth', authroutes);
 
 app.listen(port, () => {
     console.log(`Backend listening on ${port}`);
