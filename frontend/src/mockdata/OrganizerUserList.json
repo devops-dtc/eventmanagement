@@ -1,93 +1,105 @@
 {
-    "organizerEmail": "john.doe@gmail.com",
-    "organizerUsers": [
-      {
-        "id": "user1",
-        "name": "Alice Thompson",
-        "email": "alice@gmail.com",
-        "role": "Attendee",
-        "registeredEvents": ["org1", "org2"]
-      },
-      {
-        "id": "user2",
-        "name": "Bob Wilson",
-        "email": "bob@gmail.com",
-        "role": "Attendee",
-        "registeredEvents": ["org1"]
-      },
-      {
-        "id": "user3",
-        "name": "Carol Davis",
-        "email": "carol@gmail.com",
-        "role": "Attendee",
-        "registeredEvents": ["org2", "org3"]
-      },
-      {
-        "id": "user4",
-        "name": "David Brown",
-        "email": "david@gmail.com",
-        "role": "Attendee",
-        "registeredEvents": ["org3"]
-      },
-      {
-        "id": "user5",
-        "name": "Eve Clark",
-        "email": "eve@gmail.com",
-        "role": "Attendee",
-        "registeredEvents": ["org7"]
-      }
-    ],
     "eventSpecificUsers": {
       "org1": [
         {
-          "id": "user1",
-          "name": "Alice Thompson",
-          "email": "alice@gmail.com",
+          "id": "tech1",
+          "name": "John Doe",
+          "email": "john.doe@techconf.com",
+          "role": "Organizer"
+        },
+        {
+          "id": "tech2",
+          "name": "Alice Tech",
+          "email": "alice@techconf.com",
           "role": "Attendee"
         },
         {
-          "id": "user2",
-          "name": "Bob Wilson",
-          "email": "bob@gmail.com",
+          "id": "tech3",
+          "name": "Bob Developer",
+          "email": "bob@techconf.com",
           "role": "Attendee"
         }
       ],
       "org2": [
         {
-          "id": "user1",
-          "name": "Alice Thompson",
-          "email": "alice@gmail.com",
-          "role": "Attendee"
+          "id": "mkt1",
+          "name": "John Doe",
+          "email": "john.doe@techconf.com",
+          "role": "Organizer"
         },
         {
-          "id": "user3",
-          "name": "Carol Davis",
-          "email": "carol@gmail.com",
+          "id": "mkt2",
+          "name": "Marketing Pro",
+          "email": "pro@digitalmarketing.com",
           "role": "Attendee"
         }
       ],
       "org3": [
         {
-          "id": "user3",
-          "name": "Carol Davis",
-          "email": "carol@gmail.com",
-          "role": "Attendee"
-        },
-        {
-          "id": "user4",
-          "name": "David Brown",
-          "email": "david@gmail.com",
-          "role": "Attendee"
+          "id": "ux1",
+          "name": "John Doe",
+          "email": "john.doe@techconf.com",
+          "role": "Organizer"
         }
       ],
       "org7": [
         {
-          "id": "user5",
-          "name": "Eve Clark",
-          "email": "eve@gmail.com",
-          "role": "Attendee"
+          "id": "app1",
+          "name": "John Doe",
+          "email": "john.doe@techconf.com",
+          "role": "Organizer"
+        }
+      ],
+      "org8": [
+        {
+          "id": "data1",
+          "name": "John Doe",
+          "email": "john.doe@techconf.com",
+          "role": "Organizer"
+        }
+      ],
+      "org5": [
+        {
+          "id": "ai1",
+          "name": "John Doe",
+          "email": "john.doe@techconf.com",
+          "role": "Organizer"
+        }
+      ],
+      "org6": [
+        {
+          "id": "web3_1",
+          "name": "John Doe",
+          "email": "john.doe@techconf.com",
+          "role": "Organizer"
         }
       ]
-    }
+    },
+    "organizerUsers": [
+      {
+        "id": "org_main",
+        "name": "John Doe",
+        "email": "john.doe@techconf.com",
+        "role": "Organizer"
+      },
+      {
+        "id": "att1",
+        "name": "Alice Tech",
+        "email": "alice@techconf.com",
+        "role": "Attendee"
+      },
+      {
+        "id": "att2",
+        "name": "Bob Developer",
+        "email": "bob@techconf.com",
+        "role": "Attendee"
+      },
+      {
+        "id": "att3",
+        "name": "Marketing Pro",
+        "email": "pro@digitalmarketing.com",
+        "role": "Attendee"
+      }
+    ]
   }
   

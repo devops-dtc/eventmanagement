@@ -1,98 +1,173 @@
 {
-    "platformUsers": [
-      {
-        "id": "user1",
-        "name": "John Smith",
-        "email": "john.smith@gmail.com",
-        "role": "Admin",
-        "registeredEvents": ["1", "3", "5"]
-      },
-      {
-        "id": "user2",
-        "name": "Sarah Johnson",
-        "email": "sarah.security@gmail.com",
-        "role": "Organizer",
-        "registeredEvents": ["2"]
-      },
-      {
-        "id": "user3",
-        "name": "Mike Wilson",
-        "email": "mike.ai@gmail.com",
-        "role": "Organizer",
-        "registeredEvents": ["3"]
-      },
-      {
-        "id": "user4",
-        "name": "Emma Davis",
-        "email": "emma.davis@gmail.com",
-        "role": "Attendee",
-        "registeredEvents": ["1", "4"]
-      },
-      {
-        "id": "user5",
-        "name": "David Brown",
-        "email": "david.brown@gmail.com",
-        "role": "Attendee",
-        "registeredEvents": ["2", "5"]
-      },
-      {
-        "id": "user6",
-        "name": "Lisa Anderson",
-        "email": "lisa.react@gmail.com",
-        "role": "Organizer",
-        "registeredEvents": ["7"]
-      },
-      {
-        "id": "user7",
-        "name": "Tom Parker",
-        "email": "tom.data@gmail.com",
-        "role": "Organizer",
-        "registeredEvents": ["8"]
-      }
-    ],
     "eventSpecificUsers": {
       "1": [
         {
-          "id": "user1",
+          "id": "aws1",
           "name": "John Smith",
-          "email": "john.smith@gmail.com",
-          "role": "Attendee"
+          "email": "john.aws@gmail.com",
+          "role": "Organizer"
         },
         {
-          "id": "user4",
-          "name": "Emma Davis",
-          "email": "emma.davis@gmail.com",
+          "id": "aws2",
+          "name": "Cloud Expert",
+          "email": "expert@aws-summit.com",
           "role": "Attendee"
         }
       ],
       "2": [
         {
-          "id": "user2",
+          "id": "sec1",
           "name": "Sarah Johnson",
           "email": "sarah.security@gmail.com",
           "role": "Organizer"
         },
         {
-          "id": "user5",
-          "name": "David Brown",
-          "email": "david.brown@gmail.com",
+          "id": "sec2",
+          "name": "Security Specialist",
+          "email": "specialist@security.com",
           "role": "Attendee"
         }
       ],
       "3": [
         {
-          "id": "user3",
+          "id": "ai1",
           "name": "Mike Wilson",
           "email": "mike.ai@gmail.com",
           "role": "Organizer"
         },
         {
-          "id": "user1",
-          "name": "John Smith",
-          "email": "john.smith@gmail.com",
+          "id": "ai2",
+          "name": "ML Engineer",
+          "email": "engineer@ai-summit.com",
+          "role": "Attendee"
+        }
+      ],
+      "4": [
+        {
+          "id": "devops1",
+          "name": "Alex Thompson",
+          "email": "alex.devops@gmail.com",
+          "role": "Organizer"
+        },
+        {
+          "id": "devops2",
+          "name": "DevOps Lead",
+          "email": "lead@devops.com",
+          "role": "Attendee"
+        }
+      ],
+      "5": [
+        {
+          "id": "web31",
+          "name": "Emma Davis",
+          "email": "emma.web3@gmail.com",
+          "role": "Organizer"
+        },
+        {
+          "id": "web32",
+          "name": "Blockchain Developer",
+          "email": "dev@web3conf.com",
           "role": "Attendee"
         }
       ]
-    }
+    },
+    "platformUsers": [
+      {
+        "id": "admin1",
+        "name": "System Administrator",
+        "email": "admin@eventplatform.com",
+        "role": "Admin"
+      },
+      {
+        "id": "org1",
+        "name": "John Smith",
+        "email": "john.aws@gmail.com",
+        "role": "Organizer"
+      },
+      {
+        "id": "org2",
+        "name": "Sarah Johnson",
+        "email": "sarah.security@gmail.com",
+        "role": "Organizer"
+      },
+      {
+        "id": "org3",
+        "name": "Mike Wilson",
+        "email": "mike.ai@gmail.com",
+        "role": "Organizer"
+      },
+      {
+        "id": "org4",
+        "name": "Alex Thompson",
+        "email": "alex.devops@gmail.com",
+        "role": "Organizer"
+      },
+      {
+        "id": "org5",
+        "name": "Emma Davis",
+        "email": "emma.web3@gmail.com",
+        "role": "Organizer"
+      },
+      {
+        "id": "org6",
+        "name": "David Docker",
+        "email": "david.docker@gmail.com",
+        "role": "Organizer"
+      },
+      {
+        "id": "org7",
+        "name": "Lisa React",
+        "email": "lisa.react@gmail.com",
+        "role": "Organizer"
+      },
+      {
+        "id": "org8",
+        "name": "Tom Data",
+        "email": "tom.data@gmail.com",
+        "role": "Organizer"
+      },
+      {
+        "id": "org9",
+        "name": "Jane Mobile",
+        "email": "jane.mobile@gmail.com",
+        "role": "Organizer"
+      },
+      {
+        "id": "org10",
+        "name": "Paul 5G",
+        "email": "paul.5g@gmail.com",
+        "role": "Organizer"
+      },
+      {
+        "id": "pending1",
+        "name": "Mark Python",
+        "email": "mark.python@gmail.com",
+        "role": "Organizer"
+      },
+      {
+        "id": "pending2",
+        "name": "Susan IoT",
+        "email": "susan.iot@gmail.com",
+        "role": "Organizer"
+      },
+      {
+        "id": "pending3",
+        "name": "Bob Cloud",
+        "email": "bob.cloud@gmail.com",
+        "role": "Organizer"
+      },
+      {
+        "id": "pending4",
+        "name": "Mary Angular",
+        "email": "mary.angular@gmail.com",
+        "role": "Organizer"
+      },
+      {
+        "id": "pending5",
+        "name": "Peter K8s",
+        "email": "peter.k8s@gmail.com",
+        "role": "Organizer"
+      }
+    ]
   }
   

@@ -1,14 +1,24 @@
 {
-    "bannedUsers": [
-      {
-        "id": "user123",
-        "name": "John Doe",
-        "email": "john@example.com",
-        "role": "Banned",
-        "bannedAt": "2024-01-28",
-        "bannedBy": "admin@example.com",
-        "reason": "Violation of terms"
-      }
-    ]
-  }
-  
+  "bannedUsers": [
+    {
+      "id": "banned1",
+      "name": "Spam User",
+      "email": "spam@blocked.com",
+      "role": "Banned",
+      "bannedAt": "2024-01-15",
+      "bannedBy": "john.doe@techconf.com",
+      "originalRole": "Attendee",
+      "associatedEvents": ["org1", "org2"]
+    },
+    {
+      "id": "banned2",
+      "name": "Inappropriate Behavior",
+      "email": "blocked@user.com",
+      "role": "Banned",
+      "bannedAt": "2024-01-20",
+      "bannedBy": "admin@eventplatform.com",
+      "originalRole": "Attendee",
+      "associatedEvents": ["org1"]
+    }
+  ]
+}

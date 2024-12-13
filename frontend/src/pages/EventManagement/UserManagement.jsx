@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Navigate, useNavigate, useLocation } from 'react-router-dom';
 import OrganizerAdminNavbar from '../../components/Layout/Navbar/OrganizerAdminNavbar';
@@ -14,47 +14,6 @@ const UserManagement = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const eventDetails = location.state;
-  const isAdmin = user?.role === USER_ROLES.SUPER_ADMIN;
-
-  // Function to get initial user list
-  const getInitialUserList = () => {
-    if (eventDetails?.eventId) {
-      return isAdmin 
-        ? adminUsersData.eventSpecificUsers[eventDetails.eventId] 
-        : organizerUsersData.eventSpecificUsers[eventDetails.eventId] || [];
-    }
-    return isAdmin 
-      ? adminUsersData.platformUsers 
-      : organizerUsersData.organizerUsers;
-  };
-
-  const [activeManagementTab, setActiveManagementTab] = useState('users');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedUsers, setSelectedUsers] = useState([]);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showBanDialog, setShowBanDialog] = useState(false);
-  const [userToBan, setUserToBan] = useState(null);
-  const [showOptionsMenu, setShowOptionsMenu] = useState({ 
-    show: false, 
-    userId: null, 
-    x: 0, 
-    y: 0 
-  });
-  const [bannedUsers, setBannedUsers] = useState(bannedUsersData.bannedUsers);
-  const [users, setUsers] = useState(getInitialUserList());
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (showOptionsMenu.show && !e.target.closest(`.${styles.menuButton}`)) {
-        setShowOptionsMenu({ show: false, userId: null, x: 0, y: 0 });
-      }
-    };
-
-    document.addEventListener('click', handleClickOutside);
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
-    };
-  }, [showOptionsMenu.show]);
 
   if (!isAuthenticated()) {
     return <Navigate to="/login" />;
@@ -64,69 +23,95 @@ const UserManagement = () => {
     return <Navigate to="/unauthorized" />;
   }
 
+  const isAdmin = user?.role === USER_ROLES.SUPER_ADMIN;
+
+  const getInitialUserList = useCallback(() => {
+    if (eventDetails?.eventId) {
+      return isAdmin 
+        ? (adminUsersData.eventSpecificUsers[eventDetails.eventId] || [])
+        : (organizerUsersData.eventSpecificUsers[eventDetails.eventId] || []);
+    }
+    return isAdmin 
+      ? adminUsersData.platformUsers 
+      : organizerUsersData.organizerUsers;
+  }, [isAdmin, eventDetails]);
+
+  const [activeManagementTab, setActiveManagementTab] = useState('users');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedUsers, setSelectedUsers] = useState([]);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showBanDialog, setShowBanDialog] = useState(false);
+  const [showAddUserDialog, setShowAddUserDialog] = useState(false);
+  const [showCreateConfirmDialog, setShowCreateConfirmDialog] = useState(false);
+  const [userToBan, setUserToBan] = useState(null);
+  const [showOptionsMenu, setShowOptionsMenu] = useState({ 
+    show: false, 
+    userId: null, 
+    x: 0, 
+    y: 0 
+  });
+  const [bannedUsers, setBannedUsers] = useState(bannedUsersData.bannedUsers || []);
+  const [users, setUsers] = useState(getInitialUserList);
+  const [newUser, setNewUser] = useState({
+    fullName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    role: 'Attendee'
+  });
+  const [formErrors, setFormErrors] = useState({});
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (showOptionsMenu.show && !e.target.closest(`.${styles.menuButton}`)) {
+        setShowOptionsMenu({ show: false, userId: null, x: 0, y: 0 });
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [showOptionsMenu.show]);
+
   const filteredUsers = users.filter(user =>
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const canBanUser = (targetUser) => {
-    if (targetUser.role === 'Banned') return false;
-    
-    if (isAdmin) {
-      return targetUser.role !== 'Admin'; // Admins can't ban other admins
-    } else {
-      // Organizers can only ban attendees
-      return targetUser.role === 'Attendee';
-    }
-  };
-
-  const handleAddUser = () => {
-    navigate('/add-user', {
-      state: {
-        eventId: eventDetails?.eventId,
-        eventTitle: eventDetails?.eventTitle,
-        sourceRoute: '/user-management',
-        previousState: location.state
-      }
-    });
-  };
-
-  const handleManagementTabChange = (value) => {
-    setActiveManagementTab(value);
-    if (value === 'events') {
-      navigate('/event-management');
-    } else {
-      navigate('/user-management');
-    }
-  };
-
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
   };
 
-  const handleCheckUser = (userId) => {
-    setSelectedUsers(prev => {
-      if (prev.includes(userId)) {
-        return prev.filter(id => id !== userId);
-      }
-      return [...prev, userId];
-    });
-  };
-
-  const handleCheckAll = (e) => {
-    if (e.target.checked) {
-      setSelectedUsers(filteredUsers.map(user => user.id));
-    } else {
-      setSelectedUsers([]);
+  const handleManagementTabChange = (tab) => {
+    setActiveManagementTab(tab);
+    if (tab === 'events') {
+      navigate('/event-management');
     }
   };
 
-  const handleDeleteUsers = () => {
-    const updatedUsers = users.filter(user => !selectedUsers.includes(user.id));
-    setUsers(updatedUsers);
-    setShowDeleteDialog(false);
-    setSelectedUsers([]);
+  const handleCheckUser = (userId) => {
+    setSelectedUsers(prev =>
+      prev.includes(userId)
+        ? prev.filter(id => id !== userId)
+        : [...prev, userId]
+    );
   };
+
+  const handleCheckAll = (e) => {
+    setSelectedUsers(
+      e.target.checked ? filteredUsers.map(user => user.id) : []
+    );
+  };
+
+  const handleDeleteUsers = () => {
+    setUsers(prev => prev.filter(user => !selectedUsers.includes(user.id)));
+    setSelectedUsers([]);
+    setShowDeleteDialog(false);
+  };
+
+  const canBanUser = useCallback((targetUser) => {
+    if (!targetUser || targetUser.role === 'Banned') return false;
+    return isAdmin ? targetUser.role !== 'Admin' : targetUser.role === 'Attendee';
+  }, [isAdmin]);
 
   const handleBanUser = () => {
     if (!userToBan) return;
@@ -136,7 +121,6 @@ const UserManagement = () => {
       role: 'Banned',
       bannedAt: new Date().toISOString().split('T')[0],
       bannedBy: user.email,
-      reason: "Violation of terms"
     };
 
     setBannedUsers(prev => [...prev, bannedUser]);
@@ -152,19 +136,88 @@ const UserManagement = () => {
   };
 
   const handleOptionMenuClick = (e, user) => {
-    e.preventDefault();
+    e.stopPropagation();
     const rect = e.currentTarget.getBoundingClientRect();
     setShowOptionsMenu({
       show: true,
       userId: user.id,
-      x: rect.x - 120,
-      y: rect.bottom
+      x: rect.left - 150, // Adjust the width of your menu to position it properly
+      y: rect.bottom + window.scrollY
     });
   };
+  
+
+  const validateForm = () => {
+    const errors = {};
+    
+    if (!newUser.fullName.trim()) {
+      errors.fullName = 'Full name is required';
+    }
+
+    if (!newUser.email.trim()) {
+      errors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(newUser.email)) {
+      errors.email = 'Invalid email format';
+    }
+
+    if (!newUser.password) {
+      errors.password = 'Password is required';
+    } else if (newUser.password.length < 6) {
+      errors.password = 'Password must be at least 6 characters';
+    }
+
+    if (newUser.password !== newUser.confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match';
+    }
+
+    return errors;
+  };
+
+    const handleAddUserSubmit = async () => {
+    const errors = validateForm();
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+
+    try {
+      const newUserId = Math.random().toString(36).substr(2, 9);
+      const newUserData = {
+        id: newUserId,
+        name: newUser.fullName,
+        email: newUser.email,
+        role: newUser.role
+      };
+
+      setUsers(prev => [...prev, newUserData]);
+      
+      setNewUser({
+        fullName: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+        role: 'Attendee'
+      });
+      setFormErrors({});
+      setShowAddUserDialog(false);
+      setShowCreateConfirmDialog(false);
+    } catch (error) {
+      console.error('Error creating user:', error);
+      setFormErrors({ submit: 'Failed to create user. Please try again.' });
+    }
+  };
+
+  const getPageTitle = useCallback(() => {
+    if (eventDetails?.eventId) {
+      return `Users for Event: ${eventDetails.eventTitle}`;
+    }
+    return isAdmin ? `All Platform Users (${filteredUsers.length})` : `My Event Users (${filteredUsers.length})`;
+  }, [eventDetails, isAdmin, filteredUsers.length]);
 
   const renderRoleButton = (role) => {
     let buttonClass = styles.roleButton;
-    switch (role.toLowerCase()) {
+    switch (role?.toLowerCase()) {
       case 'admin':
         buttonClass += ` ${styles.adminRole}`;
         break;
@@ -183,14 +236,103 @@ const UserManagement = () => {
     return <div className={buttonClass}>{role}</div>;
   };
 
-  const getPageTitle = () => {
-    if (eventDetails?.eventId) {
-      return `Users for Event: ${eventDetails.eventTitle}`;
-    }
-    return isAdmin 
-      ? `All Platform Users (${filteredUsers.length})` 
-      : `My Event Users (${filteredUsers.length})`;
-  };
+  const renderAddUserDialog = () => (
+    <div className={styles.modalOverlay}>
+      <div className={`${styles.modalContent} ${styles.wideModal}`}>
+        <div className={styles.modalHeader}>
+          <h2>Add New User</h2>
+          <button 
+            className={styles.closeButton}
+            onClick={() => setShowAddUserDialog(false)}
+          >
+            ×
+          </button>
+        </div>
+        <form className={styles.userForm} onSubmit={(e) => {
+          e.preventDefault();
+          setShowCreateConfirmDialog(true);
+        }}>
+          <div className={styles.formGroup}>
+            <label htmlFor="fullName">Full Name</label>
+            <input
+              type="text"
+              id="fullName"
+              value={newUser.fullName}
+              onChange={(e) => setNewUser(prev => ({ ...prev, fullName: e.target.value }))}
+              className={formErrors.fullName ? styles.errorInput : ''}
+            />
+            {formErrors.fullName && <span className={styles.errorText}>{formErrors.fullName}</span>}
+          </div>
+
+          <div className={styles.formGroup}>
+            <label htmlFor="email">Email Address</label>
+            <input
+              type="email"
+              id="email"
+              value={newUser.email}
+              onChange={(e) => setNewUser(prev => ({ ...prev, email: e.target.value }))}
+              className={formErrors.email ? styles.errorInput : ''}
+            />
+            {formErrors.email && <span className={styles.errorText}>{formErrors.email}</span>}
+          </div>
+
+          <div className={styles.formGroup}>
+            <label htmlFor="password">Password</label>
+            <input
+              type="password"
+              id="password"
+              value={newUser.password}
+              onChange={(e) => setNewUser(prev => ({ ...prev, password: e.target.value }))}
+              className={formErrors.password ? styles.errorInput : ''}
+            />
+            {formErrors.password && <span className={styles.errorText}>{formErrors.password}</span>}
+          </div>
+
+          <div className={styles.formGroup}>
+            <label htmlFor="confirmPassword">Confirm Password</label>
+            <input
+              type="password"
+              id="confirmPassword"
+              value={newUser.confirmPassword}
+              onChange={(e) => setNewUser(prev => ({ ...prev, confirmPassword: e.target.value }))}
+              className={formErrors.confirmPassword ? styles.errorInput : ''}
+            />
+            {formErrors.confirmPassword && <span className={styles.errorText}>{formErrors.confirmPassword}</span>}
+          </div>
+
+          <div className={styles.formGroup}>
+            <label htmlFor="role">User Type</label>
+            <select
+              id="role"
+              value={newUser.role}
+              onChange={(e) => setNewUser(prev => ({ ...prev, role: e.target.value }))}
+            >
+              {isAdmin && <option value="Organizer">Organizer</option>}
+              <option value="Attendee">Attendee</option>
+            </select>
+          </div>
+
+          {formErrors.submit && <div className={styles.submitError}>{formErrors.submit}</div>}
+
+          <div className={styles.formActions}>
+            <button 
+              type="button" 
+              className={`${styles.roleButton} ${styles.adminRole}`}
+              onClick={() => setShowAddUserDialog(false)}
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              className={styles.addButton}
+            >
+              + Add User
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 
   return (
     <div className={styles.adminContainer}>
@@ -229,12 +371,13 @@ const UserManagement = () => {
                     value={searchTerm}
                     onChange={handleSearch}
                     className={styles.searchInput}
+                    disabled={users.length === 0}
                   />
                 </div>
                 
                 <button 
                   className={styles.addButton} 
-                  onClick={handleAddUser}
+                  onClick={() => setShowAddUserDialog(true)}
                 >
                   + Add User
                 </button>
@@ -249,70 +392,99 @@ const UserManagement = () => {
               </div>
             </div>
 
-            <div className={styles.tableContainer}>
-              <table className={styles.table}>
-                <colgroup>
-                  <col style={{ width: '40px' }} />
-                  <col style={{ width: '30%' }} />
-                  <col style={{ width: '40%' }} />
-                  <col style={{ width: '20%' }} />
-                  <col style={{ width: '40px' }} />
-                </colgroup>
-                <thead>
-                  <tr>
-                    <th className={styles.checkbox}>
-                      <input 
-                        type="checkbox"
-                        checked={selectedUsers.length === filteredUsers.length && filteredUsers.length > 0}
-                        onChange={handleCheckAll}
-                      />
-                    </th>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Role</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredUsers.map(user => (
-                    <tr key={user.id}>
-                      <td className={styles.checkbox}>
-                        <input
+            {users.length === 0 ? (
+              <div className={styles.emptyState}>
+                <div className={styles.emptyStateIcon}>👥</div>
+                <h3 className={styles.emptyStateTitle}>No Users Yet</h3>
+                <p className={styles.emptyStateText}>
+                  {eventDetails?.eventId 
+                    ? "This event doesn't have any users yet. Add users to get started!"
+                    : "There are no users in the system yet. Add users to get started!"}
+                </p>
+                <button 
+                  className={styles.addButton}
+                  onClick={() => setShowAddUserDialog(true)}
+                >
+                  + Add First User
+                </button>
+              </div>
+            ) : (
+              <div className={styles.tableContainer}>
+                <table className={styles.table}>
+                  <colgroup>
+                    <col style={{ width: '40px' }} />
+                    <col style={{ width: '30%' }} />
+                    <col style={{ width: '40%' }} />
+                    <col style={{ width: '20%' }} />
+                    <col style={{ width: '40px' }} />
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th className={styles.checkbox}>
+                        <input 
                           type="checkbox"
-                          checked={selectedUsers.includes(user.id)}
-                          onChange={() => handleCheckUser(user.id)}
+                          checked={selectedUsers.length === filteredUsers.length && filteredUsers.length > 0}
+                          onChange={handleCheckAll}
                         />
-                      </td>
-                      <td>{user.name}</td>
-                      <td>{user.email}</td>
-                      <td>{renderRoleButton(user.role)}</td>
-                      <td className={styles.menuCell}>
-                        <button 
-                          className={styles.menuButton}
-                          onClick={(e) => handleOptionMenuClick(e, user)}
-                        >
-                          •••
-                        </button>
-                      </td>
+                      </th>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Role</th>
+                      <th></th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {filteredUsers.map(user => (
+                      <tr key={user.id}>
+                        <td className={styles.checkbox}>
+                          <input
+                            type="checkbox"
+                            checked={selectedUsers.includes(user.id)}
+                            onChange={() => handleCheckUser(user.id)}
+                          />
+                        </td>
+                        <td>{user.name}</td>
+                        <td>{user.email}</td>
+                        <td>{renderRoleButton(user.role)}</td>
+                        <td className={styles.menuCell}>
+                          <button 
+                            className={styles.menuButton}
+                            onClick={(e) => handleOptionMenuClick(e, user)}
+                          >
+                            •••
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       </div>
-             {showOptionsMenu.show && (
+
+      {showAddUserDialog && renderAddUserDialog()}
+
+      {showCreateConfirmDialog && (
+        <MessageDialog
+          messageHeading="Create New User?"
+          messageText={`Are you sure you want to create a new ${newUser.role.toLowerCase()} account for ${newUser.fullName}?`}
+          messageResponse="Create User"
+          messageResponse2="Cancel"
+          onSave={handleAddUserSubmit}
+          onCancel={() => setShowCreateConfirmDialog(false)}
+        />
+      )}
+
+      {showOptionsMenu.show && (
         <div 
           className={styles.optionsMenu}
           style={{ 
             position: 'fixed', 
             left: showOptionsMenu.x,
             top: showOptionsMenu.y,
-            zIndex: 1000,
-            backgroundColor: 'white',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-            borderRadius: '8px'
+            zIndex: 1000
           }}
         >
           <div className={styles.userInfo}>
@@ -367,5 +539,3 @@ const UserManagement = () => {
 };
 
 export default UserManagement;
-
-
