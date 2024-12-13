@@ -2,8 +2,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
-import AttendeeNavbar from '../../components/Layout/Navbar/AttendeeNavbar';
-import OrganizerAdminNavbar from '../../components/Layout/Navbar/OrganizerAdminNavbar';
+import Navbar from '../../components/Layout/Navbar/Navbar';
 import { USER_ROLES } from '../../utils/constants';
 import { toast } from 'react-toastify';
 import styles from '../../styles/EditEvent.module.css';
@@ -15,7 +14,7 @@ const EditEvent = () => {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const sourceRoute = location.state?.sourceRoute || '/organizer-events';
+  const sourceRoute = location.state?.sourceRoute || '/home';
   
   const [eventData, setEventData] = useState(
     location.state?.eventDetails || {
@@ -39,7 +38,7 @@ const EditEvent = () => {
                             user?.role === USER_ROLES.ORGANIZER;
 
   if (!isAdminOrOrganizer) {
-    return <Navigate to="/attendee-events" />;
+    return <Navigate to="/home" />;
   }
 
   if (!location.state?.eventDetails) {
@@ -193,7 +192,7 @@ const EditEvent = () => {
 
   return (
     <div className="admin-container">
-      {isAdminOrOrganizer ? <OrganizerAdminNavbar /> : <AttendeeNavbar />}
+      <Navbar />
       <h1 className="page-heading">Edit Event</h1>
       <div className={styles['edit-event-card']}>
         <div className={styles['content-wrapper']}>

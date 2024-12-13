@@ -12,9 +12,9 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
     // Redirect based on user role
     if (user.role === 'Attendee') {
-      return <Navigate to="/attendee-events" />;
+      return <Navigate to="/home" />;
     } else if (user.role === 'Organizer' || user.role === 'Super Admin') {
-      return <Navigate to="/organizer-events" />;
+      return <Navigate to="/home" />;
     }
     return <Navigate to="/" />;
   }

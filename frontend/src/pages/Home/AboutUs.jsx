@@ -2,8 +2,7 @@
 import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
-import AttendeeNavbar from '../../components/Layout/Navbar/AttendeeNavbar';
-import OrganizerAdminNavbar from '../../components/Layout/Navbar/OrganizerAdminNavbar';
+import Navbar from '../../components/Layout/Navbar/Navbar';
 import { USER_ROLES } from '../../utils/constants';
 import '../../styles/Enrollment.css';
 import styles from '../../styles/ContactAbout.module.css';
@@ -20,7 +19,7 @@ const AboutUs = () => {
 
   return (
     <div className="admin-container">
-      {isAdminOrOrganizer ? <OrganizerAdminNavbar /> : <AttendeeNavbar />}
+     <Navbar /> 
       <h1 className="page-heading">About Us</h1>
       <main className="main-content">
         <div className="enrollment-container">

@@ -2,8 +2,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
-import AttendeeNavbar from '../../components/Layout/Navbar/AttendeeNavbar';
-import OrganizerAdminNavbar from '../../components/Layout/Navbar/OrganizerAdminNavbar';
+import Navbar from '../../components/Layout/Navbar/Navbar';
 import { USER_ROLES } from '../../utils/constants';
 import { toast } from 'react-toastify';
 import '../../styles/Enrollment.css';
@@ -36,9 +35,9 @@ const Enrollment = () => {
       
       // Navigate based on user role
       if (isAdminOrOrganizer) {
-        navigate('/organizer-events');
+        navigate('/home');
       } else {
-        navigate('/attendee-events');
+        navigate('/home');
       }
     } catch (error) {
       toast.error('Failed to enroll in event');
@@ -54,7 +53,7 @@ const Enrollment = () => {
 
   return (
     <div className="admin-container">
-      {isAdminOrOrganizer ? <OrganizerAdminNavbar /> : <AttendeeNavbar />}
+      <Navbar />
       <h1 className="page-heading">Event Details</h1>
       <main className="main-content">
         <div className="enrollment-container">
@@ -65,6 +64,7 @@ const Enrollment = () => {
               <div className="enrollment-datetime">
                 <span>📅 Event Date: {eventDetails.date}</span>
                 <span>⏰ Time: {eventDetails.time}</span>
+                <span>👥 {eventDetails.attendees}/{eventDetails.maxAttendees} enrolled</span>
               </div>
             </div>
             

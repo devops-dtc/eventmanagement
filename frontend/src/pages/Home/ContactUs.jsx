@@ -2,8 +2,7 @@
 import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
-import AttendeeNavbar from '../../components/Layout/Navbar/AttendeeNavbar';
-import OrganizerAdminNavbar from '../../components/Layout/Navbar/OrganizerAdminNavbar';
+import Navbar from '../../components/Layout/Navbar/Navbar';
 import { USER_ROLES } from '../../utils/constants';
 import { FaGithub } from 'react-icons/fa';
 import contactImage from '../../assets/screenshot.png'; 
@@ -22,7 +21,7 @@ const ContactUs = () => {
 
   return (
     <div className="admin-container">
-      {isAdminOrOrganizer ? <OrganizerAdminNavbar /> : <AttendeeNavbar />}
+      <Navbar />
       <h1 className="page-heading">Contact Us</h1>
       <main className="main-content">
         <div className="enrollment-container">

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Navigate, useNavigate, useLocation } from 'react-router-dom';
-import OrganizerAdminNavbar from '../../components/Layout/Navbar/OrganizerAdminNavbar';
+import Navbar from '../../components/Layout/Navbar/Navbar';
 import MessageDialog from '../../components/MessageDialog/MessageDialog';
 import { USER_ROLES } from '../../utils/constants';
 import styles from '../../styles/EventManagement.module.css';
@@ -336,7 +336,7 @@ const UserManagement = () => {
 
   return (
     <div className={styles.adminContainer}>
-      <OrganizerAdminNavbar />
+      <Navbar />
       <div className={styles.pageContainer}>
         <div className={styles.headerSection}>
           <h1 className={styles.pageTitle}>User Management</h1>

@@ -6,7 +6,7 @@ import FormInput from '../../components/FormInput/FormInput';
 import Button from '../../components/Button/Button';
 import { USER_ROLES } from '../../utils/constants';
 import { useAuth } from '../../contexts/AuthContext';
-import '../../styles/Register.css'; // Using the same CSS file
+import '../../styles/Register.css';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -57,22 +57,6 @@ const Login = () => {
 
     setIsLoading(true);
 
-    // Backend login logic (commented for future implementation)
-    /*
-    try {
-      const response = await loginUser(formData);
-      login(response.user);
-      toast.success('Login successful!');
-      navigate(response.user.role === USER_ROLES.ATTENDEE ? '/events' : '/organizer-events');
-    } catch (error) {
-      toast.error(error.message);
-      setErrors(prev => ({
-        ...prev,
-        submit: error.message
-      }));
-    }
-    */
-
     // Dummy login logic
     try {
       const dummyUsers = {
@@ -103,7 +87,8 @@ const Login = () => {
       if (user && user.role === formData.userType) {
         login(user);
         toast.success('Login successful!');
-        navigate(user.role === USER_ROLES.ATTENDEE ? '/attendee-events' : '/organizer-events');
+        // Redirect to home page for all user types
+        navigate('/');
       } else {
         throw new Error('Invalid credentials');
       }

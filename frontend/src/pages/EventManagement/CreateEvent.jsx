@@ -2,8 +2,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Navigate, useNavigate } from 'react-router-dom';
-import AttendeeNavbar from '../../components/Layout/Navbar/AttendeeNavbar';
-import OrganizerAdminNavbar from '../../components/Layout/Navbar/OrganizerAdminNavbar';
+import Navbar from '../../components/Layout/Navbar/Navbar';
 import { USER_ROLES } from '../../utils/constants';
 import { toast } from 'react-toastify';
 import styles from '../../styles/EditEvent.module.css'; // We can use the same styles
@@ -34,7 +33,7 @@ const CreateEvent = () => {
                             user?.role === USER_ROLES.ORGANIZER;
 
   if (!isAdminOrOrganizer) {
-    return <Navigate to="/attendee-events" />;
+    return <Navigate to="/home" />;
   }
 
   const handleInputChange = (field, value) => {
@@ -72,7 +71,7 @@ const CreateEvent = () => {
       // Here you would make your API call to create the event
       await new Promise(resolve => setTimeout(resolve, 1000));
       toast.success('Event created successfully');
-      navigate('/organizer-events', { 
+      navigate('/home', { 
         state: { activeTab: 'created' }
       });
     } catch (error) {
@@ -177,7 +176,7 @@ const CreateEvent = () => {
 
   return (
     <div className="admin-container">
-      {isAdminOrOrganizer ? <OrganizerAdminNavbar /> : <AttendeeNavbar />}
+      <Navbar /> 
       <h1 className="page-heading">Create Event</h1>
       <div className={styles['edit-event-card']}>
         <div className={styles['content-wrapper']}>

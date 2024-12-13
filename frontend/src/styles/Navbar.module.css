@@ -1,0 +1,57 @@
+.nav-menu {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  
+  .nav-item {
+    color: #333;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s ease;
+  }
+  
+  .nav-item:hover {
+    color: #007bff;
+  }
+  
+  .user-profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+    padding-right: 20px;
+  }
+  
+  .user-info {
+    text-align: right;
+  }
+  
+  .user-info div:first-child {
+    font-weight: 500;
+    color: #666;
+  }
+  
+  .user-info div:last-child {
+    font-size: 0.9em;
+    color: #888;
+  }
+  
+  .avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #ddd;
+  }
+  
+  .logo-section {
+    padding: 0 20px;
+  }
+  
+  .logo {
+    color: white;
+    text-decoration: none;
+    font-size: 1.5em;
+    font-weight: bold;
+  }
+  

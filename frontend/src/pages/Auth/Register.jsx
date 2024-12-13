@@ -67,7 +67,7 @@ const Register = () => {
       const response = await registerUser(formData);
       login(response.user);
       toast.success('Registration successful!');
-      navigate(response.user.role === USER_ROLES.ATTENDEE ? '/events' : '/organizer-events');
+      navigate('/');
     } catch (error) {
       toast.error(error.message);
       setErrors(prev => ({
@@ -91,7 +91,8 @@ const Register = () => {
 
       login(newUser);
       toast.success('Registration successful!');
-      navigate(newUser.role === USER_ROLES.ATTENDEE ? '/events' : '/organizer-events');
+      // Redirect to home page for all user types
+      navigate('/');
     } catch (error) {
       toast.error(error.message);
       setErrors(prev => ({
