@@ -6,4 +6,4 @@ const router = express.Router();
 // Enroll endpoint
 router.post('/enroll', enroll);
 
-export default router;
+export { router as enrollRoutes };
