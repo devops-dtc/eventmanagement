@@ -209,9 +209,15 @@ const EventManagement = () => {
   };
 
   const handleManageUsers = (eventId) => {
-    navigate(`/manage-users/${eventId}`);
+    navigate('/user-management', { 
+      state: { 
+        eventId: eventId,
+        eventTitle: currentEvents.find(event => event.id === eventId)?.title
+      }
+    });
     setShowOptionsMenu({ show: false, eventId: null, x: 0, y: 0 });
   };
+  
 
   const handleActionButton = (event) => {
     setSelectedEventForAction(event);

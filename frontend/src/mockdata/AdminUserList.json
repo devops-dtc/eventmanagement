@@ -1,0 +1,98 @@
+{
+    "platformUsers": [
+      {
+        "id": "user1",
+        "name": "John Smith",
+        "email": "john.smith@gmail.com",
+        "role": "Admin",
+        "registeredEvents": ["1", "3", "5"]
+      },
+      {
+        "id": "user2",
+        "name": "Sarah Johnson",
+        "email": "sarah.security@gmail.com",
+        "role": "Organizer",
+        "registeredEvents": ["2"]
+      },
+      {
+        "id": "user3",
+        "name": "Mike Wilson",
+        "email": "mike.ai@gmail.com",
+        "role": "Organizer",
+        "registeredEvents": ["3"]
+      },
+      {
+        "id": "user4",
+        "name": "Emma Davis",
+        "email": "emma.davis@gmail.com",
+        "role": "Attendee",
+        "registeredEvents": ["1", "4"]
+      },
+      {
+        "id": "user5",
+        "name": "David Brown",
+        "email": "david.brown@gmail.com",
+        "role": "Attendee",
+        "registeredEvents": ["2", "5"]
+      },
+      {
+        "id": "user6",
+        "name": "Lisa Anderson",
+        "email": "lisa.react@gmail.com",
+        "role": "Organizer",
+        "registeredEvents": ["7"]
+      },
+      {
+        "id": "user7",
+        "name": "Tom Parker",
+        "email": "tom.data@gmail.com",
+        "role": "Organizer",
+        "registeredEvents": ["8"]
+      }
+    ],
+    "eventSpecificUsers": {
+      "1": [
+        {
+          "id": "user1",
+          "name": "John Smith",
+          "email": "john.smith@gmail.com",
+          "role": "Attendee"
+        },
+        {
+          "id": "user4",
+          "name": "Emma Davis",
+          "email": "emma.davis@gmail.com",
+          "role": "Attendee"
+        }
+      ],
+      "2": [
+        {
+          "id": "user2",
+          "name": "Sarah Johnson",
+          "email": "sarah.security@gmail.com",
+          "role": "Organizer"
+        },
+        {
+          "id": "user5",
+          "name": "David Brown",
+          "email": "david.brown@gmail.com",
+          "role": "Attendee"
+        }
+      ],
+      "3": [
+        {
+          "id": "user3",
+          "name": "Mike Wilson",
+          "email": "mike.ai@gmail.com",
+          "role": "Organizer"
+        },
+        {
+          "id": "user1",
+          "name": "John Smith",
+          "email": "john.smith@gmail.com",
+          "role": "Attendee"
+        }
+      ]
+    }
+  }
+  

@@ -1,0 +1,14 @@
+{
+    "bannedUsers": [
+      {
+        "id": "user123",
+        "name": "John Doe",
+        "email": "john@example.com",
+        "role": "Banned",
+        "bannedAt": "2024-01-28",
+        "bannedBy": "admin@example.com",
+        "reason": "Violation of terms"
+      }
+    ]
+  }
+  

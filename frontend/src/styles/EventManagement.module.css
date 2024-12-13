@@ -334,4 +334,168 @@
     color: #454545;
   }
   
+  .eventTitle {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+    padding: 10px 0;
+  }
+  
+  .userInfo {
+    padding: 8px 16px;
+    min-width: 150px;
+  }
+  
+  .userRole {
+    font-size: 0.9rem;
+    color: #666;
+    margin-top: 4px;
+  }
+  
+  .roleButton {
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 0.9rem;
+    min-width: 90px;
+    text-align: center;
+    display: inline-block;
+  }
+  
+  .adminRole {
+    background-color: #ff4444;
+    color: white;
+    border: none;
+  }
+  
+  .organizerRole {
+    background-color: #333333;
+    color: white;
+    border: none;
+  }
+  
+  .attendeeRole {
+    background-color: white;
+    color: #333333;
+    border: 1px solid #333333;
+  }
+  
+  .banButton {
+    background-color: #ff4444;
+    color: white;
+    border: none;
+    padding: 4px 12px;
+    border-radius: 15px;
+    width: 100%;
+    margin-top: 8px;
+    cursor: pointer;
+  }
+  
+  .banButton:hover {
+    background-color: #ff0000;
+  }
+  
+  .userInfo {
+    padding: 12px;
+    min-width: 200px;
+  }
+  
+  .userName {
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+  
+  .userRoleContainer {
+    margin: 8px 0;
+  }
+  
+  .eventTitle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .bannedRole {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+  
+  .banButton {
+    background-color: #ff4444;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 15px;
+    width: 100%;
+    margin-top: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .banButton:hover {
+    background-color: #ff0000;
+  }
+  
+  .banButton:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+  
+  .optionsMenu {
+    min-width: 200px;
+    padding: 16px;
+  }
+  
+  .userName {
+    font-weight: 500;
+    margin-bottom: 12px;
+  }
+  
+  .userRoleContainer {
+    margin: 8px 0;
+  }
+  
+  .messageText {
+    color: #666;
+    margin: 12px 0;
+    line-height: 1.4;
+  }
+  
+
+  .emptyState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    text-align: center;
+  }
+  
+  .emptyStateIcon {
+    font-size: 48px;
+    margin-bottom: 16px;
+  }
+  
+  .emptyStateTitle {
+    font-size: 20px;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: #333;
+  }
+  
+  .emptyStateText {
+    color: #666;
+    margin-bottom: 24px;
+    max-width: 400px;
+    line-height: 1.5;
+  }
+  
+  .searchInput:disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+  }
   

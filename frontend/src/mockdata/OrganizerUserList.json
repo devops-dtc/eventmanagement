@@ -1,0 +1,93 @@
+{
+    "organizerEmail": "john.doe@gmail.com",
+    "organizerUsers": [
+      {
+        "id": "user1",
+        "name": "Alice Thompson",
+        "email": "alice@gmail.com",
+        "role": "Attendee",
+        "registeredEvents": ["org1", "org2"]
+      },
+      {
+        "id": "user2",
+        "name": "Bob Wilson",
+        "email": "bob@gmail.com",
+        "role": "Attendee",
+        "registeredEvents": ["org1"]
+      },
+      {
+        "id": "user3",
+        "name": "Carol Davis",
+        "email": "carol@gmail.com",
+        "role": "Attendee",
+        "registeredEvents": ["org2", "org3"]
+      },
+      {
+        "id": "user4",
+        "name": "David Brown",
+        "email": "david@gmail.com",
+        "role": "Attendee",
+        "registeredEvents": ["org3"]
+      },
+      {
+        "id": "user5",
+        "name": "Eve Clark",
+        "email": "eve@gmail.com",
+        "role": "Attendee",
+        "registeredEvents": ["org7"]
+      }
+    ],
+    "eventSpecificUsers": {
+      "org1": [
+        {
+          "id": "user1",
+          "name": "Alice Thompson",
+          "email": "alice@gmail.com",
+          "role": "Attendee"
+        },
+        {
+          "id": "user2",
+          "name": "Bob Wilson",
+          "email": "bob@gmail.com",
+          "role": "Attendee"
+        }
+      ],
+      "org2": [
+        {
+          "id": "user1",
+          "name": "Alice Thompson",
+          "email": "alice@gmail.com",
+          "role": "Attendee"
+        },
+        {
+          "id": "user3",
+          "name": "Carol Davis",
+          "email": "carol@gmail.com",
+          "role": "Attendee"
+        }
+      ],
+      "org3": [
+        {
+          "id": "user3",
+          "name": "Carol Davis",
+          "email": "carol@gmail.com",
+          "role": "Attendee"
+        },
+        {
+          "id": "user4",
+          "name": "David Brown",
+          "email": "david@gmail.com",
+          "role": "Attendee"
+        }
+      ],
+      "org7": [
+        {
+          "id": "user5",
+          "name": "Eve Clark",
+          "email": "eve@gmail.com",
+          "role": "Attendee"
+        }
+      ]
+    }
+  }
+  
