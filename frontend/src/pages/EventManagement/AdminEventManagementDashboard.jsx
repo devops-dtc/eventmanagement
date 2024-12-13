@@ -1,14 +1,13 @@
-// src/pages/EventManagement/EventManagement.jsx
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Navigate, useNavigate, useLocation } from 'react-router-dom';
-import AttendeeNavbar from '../../components/Layout/Navbar/AttendeeNavbar';
 import OrganizerAdminNavbar from '../../components/Layout/Navbar/OrganizerAdminNavbar';
 import TabButtons from '../../components/TabButtons/TabButtons';
 import MessageDialog from '../../components/MessageDialog/MessageDialog';
 import { USER_ROLES } from '../../utils/constants';
 import styles from '../../styles/EventManagement.module.css';
-import initialEventsData from '../../mockdata/AdminEventManagementData.json';
+import adminEventsData from '../../mockdata/AdminEventManagementData.json';
+import organizerEventsData from '../../mockdata/OrganizerEventManagementData.json';
 
 const EventManagement = () => {
   const { user, isAuthenticated } = useAuth();
@@ -23,22 +22,32 @@ const EventManagement = () => {
   const [showPublishDialog, setShowPublishDialog] = useState(false);
   const [showOptionsMenu, setShowOptionsMenu] = useState({ show: false, eventId: null, x: 0, y: 0 });
   const [selectedEventForAction, setSelectedEventForAction] = useState(null);
-  const [events, setEvents] = useState(initialEventsData);
+  
+  const [events, setEvents] = useState(
+    user?.role === USER_ROLES.SUPER_ADMIN ? adminEventsData : organizerEventsData
+  );
 
-  const tabs = [
-    { label: 'Published', value: 'published' },
-    { label: 'Unpublished', value: 'unpublished' },
-    { label: 'Pending Approval', value: 'pendingApproval' }
-  ];
-
-  // Check for authentication and super admin role
   if (!isAuthenticated()) {
     return <Navigate to="/login" />;
   }
 
-  if (user?.role !== USER_ROLES.SUPER_ADMIN) {
+  if (user?.role !== USER_ROLES.SUPER_ADMIN && user?.role !== USER_ROLES.ORGANIZER) {
     return <Navigate to="/unauthorized" />;
   }
+
+  const isAdmin = user?.role === USER_ROLES.SUPER_ADMIN;
+
+  const tabs = isAdmin
+    ? [
+        { label: 'Published', value: 'published' },
+        { label: 'Unpublished', value: 'unpublished' },
+        { label: 'Pending Approval', value: 'pendingApproval' }
+      ]
+    : [
+        { label: 'Published', value: 'published' },
+        { label: 'Unpublished', value: 'unpublished' },
+        { label: 'Admin Approval', value: 'adminApproval' }
+      ];
 
   const currentEvents = events[activeTab] || [];
   
@@ -47,7 +56,35 @@ const EventManagement = () => {
   );
 
   const handleAddEvent = () => {
-    navigate('/create-event');
+    const initialEventData = {
+      title: '',
+      type: '',
+      organizer: user.name,
+      startTime: '',
+      endTime: '',
+      date: '',
+      endDate: '',
+      location: '',
+      address: '',
+      zip: '',
+      attendees: '0',
+      description: '',
+      status: 'Publish',
+      category: '',
+      price: '',
+      ticketsAvailable: '',
+      createdAt: new Date().toISOString().split('T')[0],
+      lastModified: new Date().toISOString().split('T')[0]
+    };
+
+    navigate('/create-event', {
+      state: {
+        eventDetails: initialEventData,
+        sourceRoute: '/event-management',
+        activeTab: 'unpublished',
+        userRole: user.role
+      }
+    });
   };
 
   const handleTabChange = (value) => {
@@ -96,10 +133,11 @@ const EventManagement = () => {
     setSelectedEvents([]);
   };
 
-  const handleApproveEvent = () => {
+    const handleApproveEvent = () => {
     const approvedEvent = {
       ...selectedEventForAction,
-      status: 'Unpublished'
+      status: 'Unpublished',
+      lastModified: new Date().toISOString().split('T')[0]
     };
 
     setEvents(prev => ({
@@ -112,10 +150,28 @@ const EventManagement = () => {
     setSelectedEventForAction(null);
   };
 
+  const handleSendForApproval = () => {
+    const eventForApproval = {
+      ...selectedEventForAction,
+      status: 'Pending Approval',
+      lastModified: new Date().toISOString().split('T')[0]
+    };
+
+    setEvents(prev => ({
+      ...prev,
+      unpublished: [...prev.unpublished, eventForApproval],
+      adminApproval: prev.adminApproval.filter(event => event.id !== selectedEventForAction.id)
+    }));
+
+    setShowApprovalDialog(false);
+    setSelectedEventForAction(null);
+  };
+
   const handlePublishEvent = () => {
     const publishedEvent = {
       ...selectedEventForAction,
-      status: 'Published'
+      status: 'Published',
+      lastModified: new Date().toISOString().split('T')[0]
     };
 
     setEvents(prev => ({
@@ -145,12 +201,12 @@ const EventManagement = () => {
       state: { 
         eventDetails: eventToEdit,
         sourceRoute: '/event-management',
-        activeTab: activeTab
+        activeTab: activeTab,
+        userRole: user.role
       }
     });
     setShowOptionsMenu({ show: false, eventId: null, x: 0, y: 0 });
   };
-  
 
   const handleManageUsers = (eventId) => {
     navigate(`/manage-users/${eventId}`);
@@ -159,10 +215,18 @@ const EventManagement = () => {
 
   const handleActionButton = (event) => {
     setSelectedEventForAction(event);
-    if (activeTab === 'pendingApproval') {
-      setShowApprovalDialog(true);
-    } else if (activeTab === 'unpublished') {
-      setShowPublishDialog(true);
+    if (isAdmin) {
+      if (activeTab === 'pendingApproval' && event.status === 'Needs Approval') {
+        setShowApprovalDialog(true);
+      } else if (activeTab === 'unpublished' && event.status === 'Unpublished') {
+        setShowPublishDialog(true);
+      }
+    } else {
+      if (activeTab === 'unpublished' && event.status === 'Publish') {
+        setShowPublishDialog(true);
+      } else if (activeTab === 'adminApproval' && event.status === 'Get Approval') {
+        setShowApprovalDialog(true);
+      }
     }
   };
 
@@ -184,28 +248,98 @@ const EventManagement = () => {
     setActiveManagementTab(isUserManagement ? 'users' : 'events');
   }, [location]);
 
-  return (
+  const renderActionButton = (event) => {
+    if (activeTab === 'published') {
+      return (
+        <span className={`${styles.status} ${styles.published}`}>
+          Published
+        </span>
+      );
+    }
+
+    if (isAdmin) {
+      if (activeTab === 'pendingApproval' && event.status === 'Needs Approval') {
+        return (
+          <button 
+            className={styles.actionButton}
+            onClick={() => handleActionButton(event)}
+          >
+            Approve
+          </button>
+        );
+      }
+
+      if (activeTab === 'unpublished' && event.status === 'Unpublished') {
+        return (
+          <button 
+            className={styles.actionButton}
+            onClick={() => handleActionButton(event)}
+          >
+            Publish
+          </button>
+        );
+      }
+    } else {
+      if (activeTab === 'unpublished') {
+        if (event.status === 'Publish') {
+          return (
+            <button 
+              className={styles.actionButton}
+              onClick={() => handleActionButton(event)}
+            >
+              Publish
+            </button>
+          );
+        } else if (event.status === 'Pending Approval') {
+          return (
+            <span className={`${styles.status} ${styles['pending-approval']}`}>
+              Pending Approval
+            </span>
+          );
+        }
+      }
+
+      if (activeTab === 'adminApproval' && event.status === 'Get Approval') {
+        return (
+          <button 
+            className={styles.actionButton}
+            onClick={() => handleActionButton(event)}
+          >
+            Get Approval
+          </button>
+        );
+      }
+    }
+
+    return (
+      <span className={`${styles.status} ${styles[event.status.toLowerCase().replace(' ', '-')]}`}>
+        {event.status}
+      </span>
+    );
+  };
+
+    return (
     <div className={styles.adminContainer}>
       <OrganizerAdminNavbar />
       <div className={styles.pageContainer}>
-        <div className={styles.headerSection}>
-          <h1 className={styles.pageTitle}>Event Management</h1>
-          <div className={styles.managementTabs}>
-            <button 
-              className={activeManagementTab === 'events' ? styles.active : ''}
-              onClick={() => handleManagementTabChange('events')}
-            >
-              Manage Events
-            </button>
-            <button 
-              className={activeManagementTab === 'users' ? styles.active : ''}
-              onClick={() => handleManagementTabChange('users')}
-            >
-              Manage Users
-            </button>
-          </div>
+      <div className={styles.headerSection}>
+        <h1 className={styles.pageTitle}>Event Management</h1>
+        <div className={styles.managementTabs}>
+          <button 
+            className={activeManagementTab === 'events' ? styles.active : ''}
+            onClick={() => handleManagementTabChange('events')}
+          >
+            Manage Events
+          </button>
+          <button 
+            className={activeManagementTab === 'users' ? styles.active : ''}
+            onClick={() => handleManagementTabChange('users')}
+          >
+            Manage Users
+          </button>
         </div>
-        
+      </div>
+  
         <div className={styles.contentContainer}>
           <div className={styles.whiteContainer}>
             <div className={styles.header}>
@@ -248,9 +382,9 @@ const EventManagement = () => {
                   <col style={{ width: '20%' }} />
                   <col style={{ width: '10%' }} />
                   <col style={{ width: '20%' }} />
-                  <col style={{ width: '12%' }} />
-                  <col style={{ width: '12%' }} />
-                  <col style={{ width: '8%' }} />
+                  <col style={{ width: '10%' }} />
+                  <col style={{ width: '9%' }} />
+                  <col style={{ width: '9%' }} />
                   <col style={{ width: '100px' }} />
                   <col style={{ width: '40px' }} />
                 </colgroup>
@@ -289,20 +423,7 @@ const EventManagement = () => {
                       <td>{event.startTime}</td>
                       <td>{event.endTime}</td>
                       <td>{event.attendees}</td>
-                      <td>
-                        {activeTab === 'pendingApproval' || activeTab === 'unpublished' ? (
-                          <button 
-                            className={styles.actionButton}
-                            onClick={() => handleActionButton(event)}
-                          >
-                            {activeTab === 'pendingApproval' ? 'Approve' : 'Publish'}
-                          </button>
-                        ) : (
-                          <span className={`${styles.status} ${styles[event.status.toLowerCase().replace(' ', '-')]}`}>
-                            {event.status}
-                          </span>
-                        )}
-                      </td>
+                      <td>{renderActionButton(event)}</td>
                       <td className={styles.menuCell}>
                         <button 
                           className={styles.menuButton}
@@ -310,7 +431,7 @@ const EventManagement = () => {
                         >
                           •••
                         </button>
-                      </td>
+                    </td>
                     </tr>
                   ))}
                 </tbody>
@@ -350,10 +471,10 @@ const EventManagement = () => {
 
       {showApprovalDialog && (
         <MessageDialog
-          messageHeading="Approve Event?"
-          messageResponse="Approve"
+          messageHeading={isAdmin ? "Approve Event?" : "Send for Admin Approval?"}
+          messageResponse={isAdmin ? "Approve" : "Send"}
           messageResponse2="Cancel"
-          onSave={handleApproveEvent}
+          onSave={isAdmin ? handleApproveEvent : handleSendForApproval}
           onCancel={() => {
             setShowApprovalDialog(false);
             setSelectedEventForAction(null);
@@ -378,3 +499,4 @@ const EventManagement = () => {
 };
 
 export default EventManagement;
+
