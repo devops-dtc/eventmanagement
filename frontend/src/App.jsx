@@ -12,8 +12,8 @@ import CreateEvent from './pages/EventManagement/CreateEvent';
 import Profile from './pages/Profile/Profile';
 import AboutUs from './pages/Home/AboutUs';
 import ContactUs from './pages/Home/ContactUs';
-import AdminEventManagementDashboard from './pages/EventManagement/AdminEventManagementDashboard';
-import UserManagementDashboard from './pages/EventManagement/UserManagement';
+import EventManagementDashboard from './pages/EventManagement/EventManagementDashboard';
+import UserManagementDashboard from './pages/EventManagement/UserManagementDashboard';
 
 
 const App = () => {
@@ -31,9 +31,8 @@ const App = () => {
           <Route path="/profile" element={<Profile />} />
           <Route path="/about" element={<AboutUs />} />
           <Route path="/contact" element={<ContactUs />} />
-          <Route path="/event-management" element={<AdminEventManagementDashboard />} />
+          <Route path="/event-management" element={<EventManagementDashboard />} />
           <Route path="/user-management" element={<UserManagementDashboard />} />
-
         </Routes>
         <ToastContainer />
       </Router>

@@ -46,15 +46,6 @@ const Navbar = () => {
           EVENT MANAGEMENT
         </Link>
       );
-
-      // Add user management for admins
-      if (isAdmin) {
-        authenticatedItems.push(
-          <Link key="user-management" to="/user-management" className="nav-item">
-            USER MANAGEMENT
-          </Link>
-        );
-      }
     }
 
     // Add profile and logout at the end
