@@ -9,10 +9,8 @@ export const register = async (req, res) => {
     try {
         console.log('Registration request body:', req.body);
 
-        // Map the frontend field names to backend field names
         const { name: fullname, email, password, role: userType } = req.body;
 
-        // Validate input
         const validationResult = validateUser({
             fullname,
             email,
@@ -28,7 +26,6 @@ export const register = async (req, res) => {
             });
         }
 
-        // Check if user exists
         const existingUser = await findUserByEmail(email);
         if (existingUser) {
             return res.status(400).json({
@@ -37,7 +34,6 @@ export const register = async (req, res) => {
             });
         }
 
-        // Create user
         const user = await createUser({
             fullname,
             email,
@@ -55,7 +51,7 @@ export const register = async (req, res) => {
                 id: user.UserID,
                 name: user.UserFullname,
                 email: user.UserEmail,
-                role: user.UserType // Changed from userType to role to match frontend
+                role: user.UserType
             }
         });
     } catch (error) {
@@ -79,7 +75,6 @@ export const login = async (req, res) => {
             });
         }
 
-        // Find user
         const user = await findUserByEmail(email);
         if (!user) {
             return res.status(401).json({
@@ -88,7 +83,6 @@ export const login = async (req, res) => {
             });
         }
 
-        // Check password
         const isPasswordValid = await comparePassword(password, user.UserPassword);
         if (!isPasswordValid) {
             return res.status(401).json({
@@ -97,7 +91,6 @@ export const login = async (req, res) => {
             });
         }
 
-        // Check if user type matches (if provided)
         if (userType && user.UserType !== userType) {
             return res.status(401).json({
                 success: false,
@@ -105,7 +98,6 @@ export const login = async (req, res) => {
             });
         }
 
-        // Check if user is banned
         if (user.UserStatus === 'Banned') {
             return res.status(403).json({
                 success: false,
@@ -123,7 +115,7 @@ export const login = async (req, res) => {
                 id: user.UserID,
                 name: user.UserFullname,
                 email: user.UserEmail,
-                role: user.UserType // Changed from userType to role to match frontend
+                role: user.UserType
             }
         });
     } catch (error) {
@@ -148,6 +140,29 @@ export const logout = async (req, res) => {
             success: false,
             message: 'Logout failed',
             error: error.message
+        });
+    }
+};
+
+export const validateToken = async (req, res) => {
+    try {
+        // User data is already available from authenticateToken middleware
+        const user = req.user;
+
+        res.json({
+            success: true,
+            user: {
+                id: user.UserID,
+                name: user.UserFullname,
+                email: user.UserEmail,
+                role: user.UserType
+            }
+        });
+    } catch (error) {
+        console.error('Token validation error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error validating token'
         });
     }
 };

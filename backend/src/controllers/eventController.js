@@ -1,3 +1,4 @@
+import { pool } from '../config/database.js';
 import { 
     createNewEvent,
     findEventById,
@@ -28,7 +29,6 @@ export const createEvent = async (req, res) => {
             event
         });
     } catch (error) {
-        console.error('Event creation error:', error);
         res.status(500).json({ message: 'Failed to create event' });
     }
 };
@@ -48,11 +48,83 @@ export const getAllEvents = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Event fetch error:', error);
         res.status(500).json({
             success: false,
-            message: 'Failed to fetch events',
-            error: error.message
+            message: 'Failed to fetch events'
+        });
+    }
+};
+
+export const getUpcomingEvents = async (req, res) => {
+    try {
+        const [events] = await pool.execute(`
+            SELECT 
+                EventID,
+                Title,
+                Description,
+                EventType,
+                StartDate,
+                StartTime,
+                Location,
+                Address,
+                Price,
+                MaxAttendees,
+                AttendeeCount,
+                Published,
+                EventIsApproved
+            FROM EVENT 
+            WHERE StartDate >= CURDATE()
+            AND Published = TRUE 
+            AND EventIsApproved = TRUE 
+            AND EventIsDeleted = FALSE
+            ORDER BY StartDate ASC, StartTime ASC
+        `);
+
+        res.json({
+            success: true,
+            events: events
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch upcoming events'
+        });
+    }
+};
+
+export const getPastEvents = async (req, res) => {
+    try {
+        const [events] = await pool.execute(`
+            SELECT 
+                EventID,
+                Title,
+                Description,
+                EventType,
+                StartDate,
+                StartTime,
+                Location,
+                Address,
+                Price,
+                MaxAttendees,
+                AttendeeCount,
+                Published,
+                EventIsApproved
+            FROM EVENT 
+            WHERE StartDate < CURDATE()
+            AND Published = TRUE 
+            AND EventIsApproved = TRUE 
+            AND EventIsDeleted = FALSE
+            ORDER BY StartDate DESC, StartTime DESC
+        `);
+
+        res.json({
+            success: true,
+            events: events || []
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch past events'
         });
     }
 };
@@ -74,11 +146,9 @@ export const getEventById = async (req, res) => {
             event
         });
     } catch (error) {
-        console.error('Event fetch error:', error);
         res.status(500).json({
             success: false,
-            message: 'Failed to fetch event',
-            error: error.message
+            message: 'Failed to fetch event'
         });
     }
 };
@@ -94,7 +164,6 @@ export const updateEvent = async (req, res) => {
             return res.status(404).json({ message: 'Event not found' });
         }
 
-        // Check permissions
         if (userType !== 'Admin' && event.CreatedBy !== userId) {
             return res.status(403).json({ message: 'Not authorized to update this event' });
         }
@@ -105,7 +174,6 @@ export const updateEvent = async (req, res) => {
             event: updatedEvent
         });
     } catch (error) {
-        console.error('Event update error:', error);
         res.status(500).json({ message: 'Failed to update event' });
     }
 };
@@ -128,7 +196,6 @@ export const deleteEvent = async (req, res) => {
         await removeEvent(eventId);
         res.json({ message: 'Event deleted successfully' });
     } catch (error) {
-        console.error('Event deletion error:', error);
         res.status(500).json({ message: 'Failed to delete event' });
     }
 };
@@ -137,10 +204,15 @@ export const getEventsByOrganizer = async (req, res) => {
     try {
         const organizerId = req.user.UserID;
         const events = await findEventsByOrganizerId(organizerId);
-        res.json(events);
+        res.json({
+            success: true,
+            events
+        });
     } catch (error) {
-        console.error('Event fetch error:', error);
-        res.status(500).json({ message: 'Failed to fetch organizer events' });
+        res.status(500).json({ 
+            success: false,
+            message: 'Failed to fetch organizer events' 
+        });
     }
 };
 
@@ -151,12 +223,15 @@ export const approveEvent = async (req, res) => {
 
         const updatedEvent = await approveEventById(eventId, adminId);
         res.json({
+            success: true,
             message: 'Event approved successfully',
             event: updatedEvent
         });
     } catch (error) {
-        console.error('Event approval error:', error);
-        res.status(500).json({ message: 'Failed to approve event' });
+        res.status(500).json({ 
+            success: false,
+            message: 'Failed to approve event' 
+        });
     }
 };
 
@@ -168,20 +243,29 @@ export const publishEvent = async (req, res) => {
 
         const event = await findEventById(eventId);
         if (!event) {
-            return res.status(404).json({ message: 'Event not found' });
+            return res.status(404).json({ 
+                success: false,
+                message: 'Event not found' 
+            });
         }
 
         if (userType !== 'Admin' && event.CreatedBy !== userId) {
-            return res.status(403).json({ message: 'Not authorized to publish this event' });
+            return res.status(403).json({ 
+                success: false,
+                message: 'Not authorized to publish this event' 
+            });
         }
 
         const updatedEvent = await publishEventById(eventId);
         res.json({
+            success: true,
             message: 'Event published successfully',
             event: updatedEvent
         });
     } catch (error) {
-        console.error('Event publishing error:', error);
-        res.status(500).json({ message: 'Failed to publish event' });
+        res.status(500).json({ 
+            success: false,
+            message: 'Failed to publish event' 
+        });
     }
 };

@@ -3,21 +3,21 @@ import {
     enrollEvent, 
     getEnrollments, 
     getEnrollmentDetails,
-    updateEnrollment
+    updateEnrollment,
+    removeEnrollment
 } from '../controllers/enrollController.js';
-import { authenticateToken, checkRole } from '../middlewares/auth.js';
+import { authenticateToken } from '../middlewares/auth.js';
 
 const router = express.Router();
 
-// Protected routes
+// Protected routes - all routes require authentication
 router.use(authenticateToken);
 
-// Attendee routes
-router.post('/events/:eventId', enrollEvent);
-router.get('/events/:eventId', getEnrollmentDetails);
-
-// Organizer & Admin routes
-router.get('/', checkRole(['Organizer', 'Admin']), getEnrollments);
-router.put('/:id', checkRole(['Organizer', 'Admin']), updateEnrollment);
+// Enrollment routes
+router.get('/events', getEnrollments);  // Get user's enrolled events
+router.post('/events/:eventId', enrollEvent);  // Enroll in an event
+router.get('/events/:eventId', getEnrollmentDetails);  // Get specific enrollment details
+router.put('/:id', updateEnrollment);  // Update enrollment status
+router.delete('/:id', removeEnrollment);  // Remove enrollment
 
 export default router;

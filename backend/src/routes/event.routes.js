@@ -7,24 +7,30 @@ import {
     deleteEvent,
     getEventsByOrganizer,
     approveEvent,
-    publishEvent
+    publishEvent,
+    getUpcomingEvents,
+    getPastEvents
 } from '../controllers/eventController.js';
 import { authenticateToken, checkRole } from '../middlewares/auth.js';
 
 const router = express.Router();
 
 // Public routes
-router.get('/', getAllEvents);
+router.get('/past', getPastEvents);          // Make sure this comes before /:id
+router.get('/upcoming', getUpcomingEvents);  // Make sure this comes before /:id
+router.get('/', getUpcomingEvents);          // Default route shows upcoming events
 router.get('/:id', getEventById);
 
 // Protected routes
 router.use(authenticateToken);
 
+// Organizer routes
+router.get('/organizer/events', checkRole(['Organizer']), getEventsByOrganizer);
+
 // Organizer & Admin routes
 router.post('/', checkRole(['Organizer', 'Admin']), createEvent);
 router.put('/:id', checkRole(['Organizer', 'Admin']), updateEvent);
 router.delete('/:id', checkRole(['Organizer', 'Admin']), deleteEvent);
-router.get('/organizer/events', checkRole(['Organizer']), getEventsByOrganizer);
 
 // Admin only routes
 router.put('/:id/approve', checkRole(['Admin']), approveEvent);

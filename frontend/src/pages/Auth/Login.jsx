@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import FormInput from '../../components/FormInput/FormInput';
 import Button from '../../components/Button/Button';
 import { useAuth } from '../../contexts/AuthContext';
-import '../../styles/Register.css';  // Keeping your original CSS import
+import '../../styles/Register.css';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -18,12 +18,19 @@ const Login = () => {
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
 
-  // Add redirect if already logged in
+  // Redirect if already authenticated
   useEffect(() => {
+    console.group('Login Page Authentication Check');
+    console.log('Authentication status:', isAuthenticated());
+    console.log('Redirect URL:', location.state?.from?.pathname);
+
     if (isAuthenticated()) {
-      navigate('/');
+      const redirectUrl = location.state?.from?.pathname || '/';
+      console.log('Redirecting to:', redirectUrl);
+      navigate(redirectUrl, { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+    console.groupEnd();
+  }, [isAuthenticated, navigate, location]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -41,61 +48,67 @@ const Login = () => {
   };
 
   const validateForm = () => {
+    console.group('Form Validation');
     const newErrors = {};
-    if (!formData.userType) newErrors.userType = 'User type is required';
+    
+    if (!formData.userType) {
+      newErrors.userType = 'User type is required';
+    }
+    
     if (!formData.email) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Email is invalid';
     }
+    
     if (!formData.password) {
       newErrors.password = 'Password is required';
     }
 
+    console.log('Validation errors:', newErrors);
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    
+    const isValid = Object.keys(newErrors).length === 0;
+    console.log('Form is valid:', isValid);
+    console.groupEnd();
+    
+    return isValid;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!validateForm()) return;
+    console.group('Login Submission');
+    console.log('Form data:', { ...formData, password: '****' });
+
+    if (!validateForm()) {
+      console.log('Form validation failed');
+      console.groupEnd();
+      return;
+    }
 
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3000/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-          role: formData.userType
-        })
+      const response = await login({
+        email: formData.email,
+        password: formData.password,
+        role: formData.userType
       });
 
-      const data = await response.json();
+      console.log('Login response:', response);
 
-      if (data.success) {
-        // Store token and user data
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        
-        // Update auth context
-        await login(data.user);
-        
-        toast.success(data.message || 'Login successful!');
+      if (response.success) {
+        toast.success('Login successful!');
         
         // Navigate to the intended page or home
-        const redirectTo = location.state?.from?.pathname || '/';
-        navigate(redirectTo, { replace: true });
+        const redirectUrl = location.state?.from?.pathname || '/';
+        console.log('Redirecting to:', redirectUrl);
+        navigate(redirectUrl, { replace: true });
       } else {
-        toast.error(data.message || 'Login failed');
+        toast.error(response.error || 'Login failed');
         setErrors(prev => ({
           ...prev,
-          submit: data.message || 'Login failed'
+          submit: response.error || 'Login failed'
         }));
       }
     } catch (error) {
@@ -107,13 +120,23 @@ const Login = () => {
       }));
     } finally {
       setIsLoading(false);
+      console.groupEnd();
     }
   };
 
+  // Prevent form submission while loading
+  const handleFormSubmit = (e) => {
+    if (isLoading) {
+      e.preventDefault();
+      return;
+    }
+    handleSubmit(e);
+  };
+
   return (
-    <div className="register-container">  {/* Keeping your original className */}
+    <div className="register-container">
       <div className="logo">easyevent</div>
-      <form className="form-container" onSubmit={handleSubmit}>
+      <form className="form-container" onSubmit={handleFormSubmit}>
         <h1 className="heading">Welcome back!</h1>
         <p className="login-text">
           Don't have an account?{' '}
@@ -131,17 +154,20 @@ const Login = () => {
 
         <div className="input-container">
           <select
-            className="form-select"
+            className={`form-select ${errors.userType ? 'error' : ''}`}
             name="userType"
             value={formData.userType}
             onChange={handleChange}
+            disabled={isLoading}
           >
-            <option value="" disabled>User Type</option>
+            <option value="" disabled>Select User Type</option>
             <option value="Admin">Admin</option>
             <option value="Organizer">Organizer</option>
             <option value="Attendee">Attendee</option>
           </select>
-          {errors.userType && <div className="error-message">{errors.userType}</div>}
+          {errors.userType && (
+            <div className="error-message">{errors.userType}</div>
+          )}
         </div>
 
         <FormInput
@@ -151,6 +177,8 @@ const Login = () => {
           value={formData.email}
           onChange={handleChange}
           error={errors.email}
+          disabled={isLoading}
+          required
         />
 
         <FormInput
@@ -160,12 +188,20 @@ const Login = () => {
           value={formData.password}
           onChange={handleChange}
           error={errors.password}
+          disabled={isLoading}
+          required
         />
 
-        {errors.submit && <div className="submit-error">{errors.submit}</div>}
+        {errors.submit && (
+          <div className="error-message submit-error">
+            {errors.submit}
+          </div>
+        )}
 
         <Button
           type="submit"
+          className="submit-button"
+          disabled={isLoading}
           loading={isLoading}
         >
           {isLoading ? 'Signing in...' : 'Log in'}

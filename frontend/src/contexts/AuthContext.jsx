@@ -12,79 +12,137 @@ const anonymousUser = {
 };
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(anonymousUser);
+    const [user, setUser] = useState(() => {
+        const storedUser = localStorage.getItem('user');
+        console.log('Initial user state from localStorage:', storedUser);
+        return storedUser ? JSON.parse(storedUser) : anonymousUser;
+    });
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
     useEffect(() => {
+        console.group('Auth State Changed');
+        console.log({
+            currentUser: user,
+            isAnonymous: user.role === 'Anonymous',
+            token: !!localStorage.getItem('token'),
+            storedUser: !!localStorage.getItem('user')
+        });
+        console.groupEnd();
+    }, [user]);
+
+    useEffect(() => {
         const validateSession = async () => {
+            console.group('Auth Validation Flow');
+            console.log('Starting session validation');
+            console.log('Initial state:', {
+                userState: user,
+                token: localStorage.getItem('token'),
+                storedUser: localStorage.getItem('user')
+            });
+
             try {
                 const token = localStorage.getItem('token');
                 const storedUser = localStorage.getItem('user');
                 
-                if (token && storedUser) {
-                    // Validate token with backend
+                if (!token || !storedUser) {
+                    console.log('No stored credentials found');
+                    setUser(anonymousUser);
+                    setLoading(false);
+                    return;
+                }
+
+                console.log('Found stored credentials');
+                const parsedUser = JSON.parse(storedUser);
+                setUser(parsedUser);
+
+                try {
                     const response = await fetch('http://localhost:3000/api/auth/validate', {
                         headers: {
                             'Authorization': `Bearer ${token}`
                         }
                     });
 
+                    console.log('Validation response:', {
+                        status: response.status,
+                        ok: response.ok
+                    });
+
                     if (response.ok) {
-                        const userData = JSON.parse(storedUser);
-                        setUser(userData);
+                        const validationData = await response.json();
+                        console.log('Validation successful:', validationData);
+                        
+                        // Update user data if different from stored
+                        if (JSON.stringify(validationData.user) !== storedUser) {
+                            setUser(validationData.user);
+                            localStorage.setItem('user', JSON.stringify(validationData.user));
+                        }
                     } else {
-                        // If token validation fails, revert to anonymous user
-                        setUser(anonymousUser);
-                        localStorage.removeItem('token');
-                        localStorage.removeItem('user');
+                        console.warn('Token validation failed');
+                        handleLogout();
                     }
-                } else {
-                    // No token or stored user, set as anonymous
-                    setUser(anonymousUser);
+                } catch (error) {
+                    console.error('Validation request failed:', error);
+                    // Keep the session if it's just a network error
                 }
             } catch (error) {
                 console.error('Session validation error:', error);
-                setUser(anonymousUser);
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
+                handleLogout();
             } finally {
                 setLoading(false);
+                console.groupEnd();
             }
         };
 
         validateSession();
     }, []);
 
-    const login = async (userData) => {
+    const handleLogout = () => {
+        setUser(anonymousUser);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+    };
+
+    const login = async (credentials) => {
+        console.group('Login Process');
         try {
-            // Validate user role
-            if (!userData.role || !Object.values(USER_ROLES).includes(userData.role)) {
-                throw new Error('Invalid user role');
-            }
+            const response = await fetch('http://localhost:3000/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(credentials)
+            });
 
-            // Ensure all required fields are present
-            const requiredFields = ['id', 'name', 'role', 'email'];
-            const missingFields = requiredFields.filter(field => !userData[field]);
-            
-            if (missingFields.length > 0) {
-                throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
-            }
+            const data = await response.json();
+            console.log('Login response:', data);
 
-            setUser(userData);
-            localStorage.setItem('user', JSON.stringify(userData));
-            
-            return { success: true };
+            if (data.success) {
+                const { token, user: userData } = data;
+                
+                // Store token and user data
+                localStorage.setItem('token', token);
+                localStorage.setItem('user', JSON.stringify(userData));
+                
+                // Update state
+                setUser(userData);
+                return { success: true };
+            } else {
+                throw new Error(data.message || 'Login failed');
+            }
         } catch (error) {
             console.error('Login error:', error);
             return {
                 success: false,
                 error: error.message || 'Login failed'
             };
+        } finally {
+            console.groupEnd();
         }
     };
 
     const register = async (userData) => {
+        console.group('Registration Process');
         try {
             const response = await fetch('http://localhost:3000/api/auth/register', {
                 method: 'POST',
@@ -95,6 +153,7 @@ export const AuthProvider = ({ children }) => {
             });
 
             const data = await response.json();
+            console.log('Registration response:', data);
 
             if (data.success) {
                 localStorage.setItem('token', data.token);
@@ -110,21 +169,36 @@ export const AuthProvider = ({ children }) => {
                 success: false,
                 error: error.message || 'Registration failed'
             };
+        } finally {
+            console.groupEnd();
         }
     };
 
-    const logout = () => {
-        setUser(anonymousUser);
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        // Only navigate to login if we're not already there
-        if (window.location.pathname !== '/login') {
+    const logout = async () => {
+        console.group('Logout Process');
+        try {
+            const token = localStorage.getItem('token');
+            if (token) {
+                await fetch('http://localhost:3000/api/auth/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Logout error:', error);
+        } finally {
+            handleLogout();
             navigate('/login');
+            console.groupEnd();
         }
     };
 
     const isAuthenticated = () => {
-        return user?.role !== 'Anonymous' && !!localStorage.getItem('token');
+        const token = localStorage.getItem('token');
+        const storedUser = localStorage.getItem('user');
+        return user?.role !== 'Anonymous' && !!token && !!storedUser;
     };
 
     const hasRole = (roles) => {
@@ -136,36 +210,6 @@ export const AuthProvider = ({ children }) => {
 
     const isAnonymous = () => {
         return user?.role === 'Anonymous' || !localStorage.getItem('token');
-    };
-
-    const updateUser = async (updates) => {
-        try {
-            const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:3000/api/auth/profile', {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(updates)
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                setUser(data.user);
-                localStorage.setItem('user', JSON.stringify(data.user));
-                return { success: true };
-            } else {
-                throw new Error(data.message || 'Profile update failed');
-            }
-        } catch (error) {
-            console.error('Profile update error:', error);
-            return {
-                success: false,
-                error: error.message || 'Profile update failed'
-            };
-        }
     };
 
     if (loading) {
@@ -183,7 +227,6 @@ export const AuthProvider = ({ children }) => {
         register,
         isAuthenticated,
         hasRole,
-        updateUser,
         loading,
         isAnonymous
     };

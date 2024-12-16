@@ -9,10 +9,11 @@ import '../../styles/OrganizerEvents.css';
 
 const HomePage = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState('upcoming');
   const [events, setEvents] = useState({
     upcoming: [],
+    past: [],
     enrolled: [],
     created: []
   });
@@ -22,72 +23,107 @@ const HomePage = () => {
   const isAdmin = user?.role === 'Admin';
   const canManageEvents = isOrganizer || isAdmin;
 
-  // Fetch events based on active tab
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const storedUser = localStorage.getItem('user');
+    
+    if (!token || !storedUser) {
+      setActiveTab('upcoming');
+    } else if (activeTab === 'past') {
+      setActiveTab('upcoming');
+    }
+  }, [user, isAuthenticated]);
+
   useEffect(() => {
     const fetchEvents = async () => {
       setLoading(true);
       try {
         const token = localStorage.getItem('token');
         let endpoint = '';
+        let headers = {
+          'Content-Type': 'application/json'
+        };
+
+        if (token && isAuthenticated()) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
 
         switch(activeTab) {
           case 'enrolled':
+            if (!isAuthenticated()) {
+              setActiveTab('upcoming');
+              return;
+            }
             endpoint = '/api/enroll/events';
             break;
           case 'created':
+            if (!isAuthenticated() || !canManageEvents) {
+              setActiveTab('upcoming');
+              return;
+            }
             endpoint = '/api/events/organizer/events';
+            break;
+          case 'past':
+            if (isAuthenticated()) {
+              setActiveTab('upcoming');
+              return;
+            }
+            endpoint = '/api/events/past';
             break;
           case 'upcoming':
           default:
-            endpoint = '/api/events';
+            endpoint = '/api/events/upcoming';
             break;
         }
 
-        const response = await fetch(`http://localhost:3000${endpoint}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
+        const response = await fetch(`http://localhost:3000${endpoint}`, { headers });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
         const data = await response.json();
         
         if (data.success) {
+          const formattedEvents = data.events.map(event => ({
+            ...event,
+            StartDate: new Date(event.StartDate).toLocaleDateString(),
+            StartTime: event.StartTime.slice(0, 5)  // Format time to HH:MM
+          }));
+
           setEvents(prev => ({
             ...prev,
-            [activeTab]: data.events
+            [activeTab]: formattedEvents
           }));
         } else {
-          toast.error(data.message);
+          toast.error(data.message || 'Failed to fetch events');
         }
       } catch (error) {
-        console.error('Error fetching events:', error);
-        toast.error('Failed to fetch events');
+        toast.error(`Failed to fetch ${activeTab} events`);
       } finally {
         setLoading(false);
       }
     };
 
     fetchEvents();
-  }, [activeTab]);
+  }, [activeTab, isAuthenticated, canManageEvents, user]);
 
   const getTabs = () => {
-    if (!isAuthenticated()) {
-      return [
-        { value: 'upcoming', label: 'Upcoming Events' }
-      ];
-    }
-    if (canManageEvents) {
-      return [
-        { value: 'upcoming', label: 'Upcoming Events' },
-        { value: 'enrolled', label: 'Enrolled Events' },
-        { value: 'created', label: 'Created Events' }
-      ];
-    }
-    return [
-      { value: 'upcoming', label: 'Upcoming Events' },
-      { value: 'enrolled', label: 'Enrolled Events' }
-    ];
+    return !isAuthenticated() 
+      ? [
+          { value: 'upcoming', label: 'Upcoming Events' },
+          { value: 'past', label: 'Past Events' }
+        ]
+      : canManageEvents 
+        ? [
+            { value: 'upcoming', label: 'Upcoming Events' },
+            { value: 'enrolled', label: 'Enrolled Events' },
+            { value: 'created', label: 'Created Events' }
+          ]
+        : [
+            { value: 'upcoming', label: 'Upcoming Events' },
+            { value: 'enrolled', label: 'Enrolled Events' }
+          ];
   };
 
   const handleNavigateToEvent = (event) => {
@@ -129,7 +165,6 @@ const HomePage = () => {
         toast.error(data.message);
       }
     } catch (error) {
-      console.error('Error removing enrollment:', error);
       toast.error('Failed to remove enrollment');
     }
   };
@@ -164,6 +199,8 @@ const HomePage = () => {
           Remove Enrollment
         </button>
       );
+    } else if (activeTab === 'past') {
+      return null;
     } else {
       return (
         <button 
@@ -177,16 +214,21 @@ const HomePage = () => {
   };
 
   const getNoEventsMessage = () => {
-    if (!isAuthenticated()) {
-      return "No upcoming events available.";
+    switch(activeTab) {
+      case 'created':
+        return "You haven't created any events yet.";
+      case 'enrolled':
+        return "You haven't enrolled in any events yet.";
+      case 'past':
+        return "No past events available.";
+      default:
+        return "No upcoming events available.";
     }
-    if (activeTab === 'created' && canManageEvents) {
-      return "You haven't created any events yet.";
-    } else if (activeTab === 'enrolled') {
-      return "You haven't enrolled in any events yet.";
-    }
-    return "No upcoming events available.";
   };
+
+  if (authLoading) {
+    return <div className="loading">Loading...</div>;
+  }
 
   return (
     <div className="admin-container">
@@ -202,7 +244,7 @@ const HomePage = () => {
               onTabChange={setActiveTab}
               tabs={getTabs()}
             />
-            {canManageEvents && (
+            {canManageEvents && isAuthenticated() && (
               <button 
                 className="create-event-button"
                 onClick={() => navigate('/create-event')}
@@ -238,11 +280,11 @@ const HomePage = () => {
                         <div className="event-details">
                           <span>📍 {event.Location}</span>
                           <div>
-                            <span>📅 {new Date(event.StartDate).toLocaleDateString()}</span>
+                            <span>📅 {event.StartDate}</span>
                             <span style={{marginLeft: '15px'}}>⏰ {event.StartTime}</span>
                           </div>
                           <div className="enrollment-count">
-                            <span>👥 {event.AttendeeCount}/{event.MaxAttendees} enrolled</span>
+                            <span>👥 {event.AttendeeCount || 0}/{event.MaxAttendees} enrolled</span>
                           </div>
                         </div>
                       </div>

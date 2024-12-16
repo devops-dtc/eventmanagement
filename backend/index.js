@@ -1,5 +1,3 @@
-// index.js
-
 import express from 'express';
 import cors from 'cors';
 import config from './src/config/config.js';
@@ -34,14 +32,14 @@ app.use(errorHandler);
 // Start server
 const startServer = async () => {
     try {
-        await connectDB();  // Connect to the database
+        await connectDB();
         app.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);
             console.log(`Environment: ${config.NODE_ENV}`);
         });
     } catch (error) {
         console.error('Failed to start server:', error);
-        process.exit(1);  // Exit the application if server fails to start
+        process.exit(1);
     }
 };
 
