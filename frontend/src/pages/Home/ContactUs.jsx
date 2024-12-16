@@ -16,7 +16,7 @@ const ContactUs = () => {
     return <Navigate to="/login" />;
   }
 
-  const isAdminOrOrganizer = user?.role === USER_ROLES.SUPER_ADMIN || 
+  const isAdminOrOrganizer = user?.role === USER_ROLES.ADMIN || 
                             user?.role === USER_ROLES.ORGANIZER;
 
   return (

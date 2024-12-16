@@ -19,11 +19,11 @@ const UserManagement = () => {
     return <Navigate to="/login" />;
   }
 
-  if (user?.role !== USER_ROLES.SUPER_ADMIN && user?.role !== USER_ROLES.ORGANIZER) {
+  if (user?.role !== USER_ROLES.ADMIN && user?.role !== USER_ROLES.ORGANIZER) {
     return <Navigate to="/unauthorized" />;
   }
 
-  const isAdmin = user?.role === USER_ROLES.SUPER_ADMIN;
+  const isAdmin = user?.role === USER_ROLES.ADMIN;
 
   const getInitialUserList = useCallback(() => {
     if (eventDetails?.eventId) {

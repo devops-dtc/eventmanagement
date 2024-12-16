@@ -1,6 +1,6 @@
 export const USER_ROLES = {
-    SUPER_ADMIN: 'super_admin',
-    ORGANIZER: 'organizer',
-    ATTENDEE: 'attendee'
-  };
-  
+  ADMIN: 'Admin',
+  ORGANIZER: 'Organizer',
+  ATTENDEE: 'Attendee',
+  ANONYMOUS: 'Anonymous'
+};

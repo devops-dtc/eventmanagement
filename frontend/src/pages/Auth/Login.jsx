@@ -1,16 +1,15 @@
-// src/pages/Auth/Login.jsx
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import FormInput from '../../components/FormInput/FormInput';
 import Button from '../../components/Button/Button';
-import { USER_ROLES } from '../../utils/constants';
 import { useAuth } from '../../contexts/AuthContext';
-import '../../styles/Register.css';
+import '../../styles/Register.css';  // Keeping your original CSS import
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const location = useLocation();
+  const { login, isAuthenticated } = useAuth();
   const [formData, setFormData] = useState({
     userType: '',
     email: '',
@@ -18,6 +17,13 @@ const Login = () => {
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+
+  // Add redirect if already logged in
+  useEffect(() => {
+    if (isAuthenticated()) {
+      navigate('/');
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -57,46 +63,47 @@ const Login = () => {
 
     setIsLoading(true);
 
-    // Dummy login logic
     try {
-      const dummyUsers = {
-        'attendee@test.com': { 
-          id: '1', 
-          name: 'Test Attendee', 
-          role: USER_ROLES.ATTENDEE, 
-          email: 'attendee@test.com' 
+      const response = await fetch('http://localhost:3000/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
         },
-        'organizer@test.com': { 
-          id: '2', 
-          name: 'Test Organizer', 
-          role: USER_ROLES.ORGANIZER, 
-          email: 'organizer@test.com' 
-        },
-        'admin@test.com': { 
-          id: '3', 
-          name: 'Test Admin', 
-          role: USER_ROLES.SUPER_ADMIN, 
-          email: 'admin@test.com' 
-        }
-      };
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          role: formData.userType
+        })
+      });
 
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const data = await response.json();
 
-      const user = dummyUsers[formData.email];
-      if (user && user.role === formData.userType) {
-        login(user);
-        toast.success('Login successful!');
-        // Redirect to home page for all user types
-        navigate('/');
+      if (data.success) {
+        // Store token and user data
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        // Update auth context
+        await login(data.user);
+        
+        toast.success(data.message || 'Login successful!');
+        
+        // Navigate to the intended page or home
+        const redirectTo = location.state?.from?.pathname || '/';
+        navigate(redirectTo, { replace: true });
       } else {
-        throw new Error('Invalid credentials');
+        toast.error(data.message || 'Login failed');
+        setErrors(prev => ({
+          ...prev,
+          submit: data.message || 'Login failed'
+        }));
       }
     } catch (error) {
-      toast.error(error.message);
+      console.error('Login error:', error);
+      toast.error('Login failed. Please try again.');
       setErrors(prev => ({
         ...prev,
-        submit: error.message
+        submit: 'Login failed. Please try again.'
       }));
     } finally {
       setIsLoading(false);
@@ -104,7 +111,7 @@ const Login = () => {
   };
 
   return (
-    <div className="register-container">
+    <div className="register-container">  {/* Keeping your original className */}
       <div className="logo">easyevent</div>
       <form className="form-container" onSubmit={handleSubmit}>
         <h1 className="heading">Welcome back!</h1>
@@ -130,9 +137,9 @@ const Login = () => {
             onChange={handleChange}
           >
             <option value="" disabled>User Type</option>
-            <option value={USER_ROLES.SUPER_ADMIN}>Super Admin</option>
-            <option value={USER_ROLES.ORGANIZER}>Organizer</option>
-            <option value={USER_ROLES.ATTENDEE}>Attendee</option>
+            <option value="Admin">Admin</option>
+            <option value="Organizer">Organizer</option>
+            <option value="Attendee">Attendee</option>
           </select>
           {errors.userType && <div className="error-message">{errors.userType}</div>}
         </div>
@@ -161,7 +168,7 @@ const Login = () => {
           type="submit"
           loading={isLoading}
         >
-          log in
+          {isLoading ? 'Signing in...' : 'Log in'}
         </Button>
       </form>
     </div>

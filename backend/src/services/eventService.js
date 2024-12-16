@@ -27,50 +27,59 @@ export const createNewEvent = async (eventData) => {
     return findEventById(result.insertId);
 };
 
-export const findAllEvents = async ({ page, limit, category, search }) => {
-    const { limit: limitVal, offset } = paginateResults(page, limit);
-    
-    let query = `
-        SELECT e.*, 
-               u.UserFullname as OrganizerName,
-               ec.CategoryName,
-               (SELECT COUNT(*) FROM EVENT_ENROLLMENT WHERE EventID = e.EventID) as AttendeeCount
-        FROM EVENT e
-        JOIN USER u ON e.CreatedBy = u.UserID
-        JOIN EVENT_CATEGORY ec ON e.CategoryID = ec.CategoryID
-        WHERE e.EventIsDeleted = FALSE AND e.Published = TRUE
-    `;
+export const findAllEvents = async (options = {}) => {
+    try {
+        const page = parseInt(options.page) || 1;
+        const limit = parseInt(options.limit) || 10;
+        const offset = (page - 1) * limit;
+        
+        const query = `
+            SELECT 
+                e.*,
+                u.UserFullname as OrganizerName,
+                ec.CategoryName,
+                COALESCE((
+                    SELECT COUNT(*) 
+                    FROM EVENT_ENROLLMENT 
+                    WHERE EventID = e.EventID
+                ), 0) as AttendeeCount
+            FROM EVENT e
+            LEFT JOIN USER u ON e.CreatedBy = u.UserID
+            LEFT JOIN EVENT_CATEGORY ec ON e.CategoryID = ec.CategoryID
+            WHERE e.EventIsDeleted = FALSE 
+            AND e.Published = TRUE
+            ORDER BY e.StartDate ASC
+            LIMIT ? OFFSET ?
+        `;
 
-    const queryParams = [];
-
-    if (category) {
-        query += ' AND e.CategoryID = ?';
-        queryParams.push(category);
+        const [rows] = await pool.query(query, [limit, offset]);
+        return rows;
+    } catch (error) {
+        console.error('Error in findAllEvents:', error);
+        throw error;
     }
-
-    if (search) {
-        query += ' AND (e.Title LIKE ? OR e.Description LIKE ?)';
-        queryParams.push(`%${search}%`, `%${search}%`);
-    }
-
-    query += ' ORDER BY e.StartDate ASC LIMIT ? OFFSET ?';
-    queryParams.push(limitVal, offset);
-
-    const [rows] = await pool.execute(query, queryParams);
-    return rows;
 };
+
 export const findEventById = async (eventId) => {
-    const [rows] = await pool.execute(
-        `SELECT e.*, 
-         u.UserFullname as OrganizerName,
-         ec.CategoryName
-        FROM EVENT e
-        JOIN USER u ON e.CreatedBy = u.UserID
-        JOIN EVENT_CATEGORY ec ON e.CategoryID = ec.CategoryID
-        WHERE e.EventID = ?`,
-        [eventId]
-    );
-    return rows[0];
+    try {
+        const [rows] = await pool.query(
+            `SELECT 
+                e.*,
+                u.UserFullname as OrganizerName,
+                ec.CategoryName
+            FROM EVENT e
+            LEFT JOIN USER u ON e.CreatedBy = u.UserID
+            LEFT JOIN EVENT_CATEGORY ec ON e.CategoryID = ec.CategoryID
+            WHERE e.EventID = ? 
+            AND e.EventIsDeleted = FALSE
+            AND e.Published = TRUE`,
+            [eventId]
+        );
+        return rows[0];
+    } catch (error) {
+        console.error('Error in findEventById:', error);
+        throw error;
+    }
 };
 
 export const updateEventDetails = async (eventId, eventData) => {

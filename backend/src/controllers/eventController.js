@@ -35,25 +35,51 @@ export const createEvent = async (req, res) => {
 
 export const getAllEvents = async (req, res) => {
     try {
-        const { page = 1, limit = 10, category, search } = req.query;
-        const events = await findAllEvents({ page, limit, category, search });
-        res.json(events);
+        const { page, limit } = req.query;
+        const events = await findAllEvents({ page, limit });
+        
+        res.json({
+            success: true,
+            events,
+            pagination: {
+                page: parseInt(page) || 1,
+                limit: parseInt(limit) || 10,
+                total: events.length
+            }
+        });
     } catch (error) {
         console.error('Event fetch error:', error);
-        res.status(500).json({ message: 'Failed to fetch events' });
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch events',
+            error: error.message
+        });
     }
 };
 
 export const getEventById = async (req, res) => {
     try {
-        const event = await findEventById(req.params.id);
+        const { id } = req.params;
+        const event = await findEventById(id);
+        
         if (!event) {
-            return res.status(404).json({ message: 'Event not found' });
+            return res.status(404).json({
+                success: false,
+                message: 'Event not found'
+            });
         }
-        res.json(event);
+
+        res.json({
+            success: true,
+            event
+        });
     } catch (error) {
         console.error('Event fetch error:', error);
-        res.status(500).json({ message: 'Failed to fetch event' });
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch event',
+            error: error.message
+        });
     }
 };
 

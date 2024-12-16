@@ -1,130 +1,153 @@
 import { 
     createUser, 
-    findUserByEmail, 
-    updateUserProfile 
+    findUserByEmail 
 } from '../services/authService.js';
 import { generateToken, comparePassword } from '../utils/helpers.js';
 import { validateUser } from '../utils/validation.js';
 
 export const register = async (req, res) => {
     try {
-        const { fullname, email, password, userType = 'Attendee' } = req.body;
+        console.log('Registration request body:', req.body);
+
+        // Map the frontend field names to backend field names
+        const { name: fullname, email, password, role: userType } = req.body;
 
         // Validate input
-        const { isValid, errors } = validateUser({ fullname, email, password });
-        if (!isValid) {
-            return res.status(400).json({ errors });
+        const validationResult = validateUser({
+            fullname,
+            email,
+            password,
+            userType: userType || 'Attendee'
+        });
+
+        if (!validationResult.isValid) {
+            return res.status(400).json({
+                success: false,
+                message: 'Validation failed',
+                errors: validationResult.errors
+            });
         }
 
         // Check if user exists
         const existingUser = await findUserByEmail(email);
         if (existingUser) {
-            return res.status(400).json({ message: 'Email already registered' });
+            return res.status(400).json({
+                success: false,
+                message: 'Email already registered'
+            });
         }
 
         // Create user
-        const user = await createUser({ fullname, email, password, userType });
+        const user = await createUser({
+            fullname,
+            email,
+            password,
+            userType: userType || 'Attendee'
+        });
+
         const token = generateToken(user.UserID);
 
         res.status(201).json({
+            success: true,
             message: 'Registration successful',
             token,
             user: {
                 id: user.UserID,
-                fullname: user.UserFullname,
+                name: user.UserFullname,
                 email: user.UserEmail,
-                userType: user.UserType
+                role: user.UserType // Changed from userType to role to match frontend
             }
         });
     } catch (error) {
         console.error('Registration error:', error);
-        res.status(500).json({ message: 'Registration failed' });
+        res.status(500).json({
+            success: false,
+            message: 'Registration failed',
+            error: error.message
+        });
     }
 };
 
 export const login = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, password, role: userType } = req.body;
+
+        if (!email || !password) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email and password are required'
+            });
+        }
 
         // Find user
         const user = await findUserByEmail(email);
         if (!user) {
-            return res.status(401).json({ message: 'Invalid credentials' });
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid credentials'
+            });
         }
 
         // Check password
         const isPasswordValid = await comparePassword(password, user.UserPassword);
         if (!isPasswordValid) {
-            return res.status(401).json({ message: 'Invalid credentials' });
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid credentials'
+            });
+        }
+
+        // Check if user type matches (if provided)
+        if (userType && user.UserType !== userType) {
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid user type'
+            });
         }
 
         // Check if user is banned
         if (user.UserStatus === 'Banned') {
-            return res.status(403).json({ message: 'Account is banned' });
+            return res.status(403).json({
+                success: false,
+                message: 'Account is banned'
+            });
         }
 
         const token = generateToken(user.UserID);
 
         res.json({
+            success: true,
             message: 'Login successful',
             token,
             user: {
                 id: user.UserID,
-                fullname: user.UserFullname,
+                name: user.UserFullname,
                 email: user.UserEmail,
-                userType: user.UserType
+                role: user.UserType // Changed from userType to role to match frontend
             }
         });
     } catch (error) {
         console.error('Login error:', error);
-        res.status(500).json({ message: 'Login failed' });
+        res.status(500).json({
+            success: false,
+            message: 'Login failed',
+            error: error.message
+        });
     }
 };
 
 export const logout = async (req, res) => {
-    res.json({ message: 'Logged out successfully' });
-};
-
-export const getProfile = async (req, res) => {
     try {
-        const user = await findUserByEmail(req.user.UserEmail);
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-
         res.json({
-            user: {
-                id: user.UserID,
-                fullname: user.UserFullname,
-                email: user.UserEmail,
-                userType: user.UserType,
-                createdAt: user.CreatedAt
-            }
+            success: true,
+            message: 'Logged out successfully'
         });
     } catch (error) {
-        console.error('Profile fetch error:', error);
-        res.status(500).json({ message: 'Failed to fetch profile' });
-    }
-};
-
-export const updateProfile = async (req, res) => {
-    try {
-        const { fullname, email } = req.body;
-        const userId = req.user.UserID;
-
-        const updatedUser = await updateUserProfile(userId, { fullname, email });
-
-        res.json({
-            message: 'Profile updated successfully',
-            user: {
-                id: updatedUser.UserID,
-                fullname: updatedUser.UserFullname,
-                email: updatedUser.UserEmail,
-                userType: updatedUser.UserType
-            }
+        console.error('Logout error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Logout failed',
+            error: error.message
         });
-    } catch (error) {
-        console.error('Profile update error:', error);
-        res.status(500).json({ message: 'Failed to update profile' });
     }
 };

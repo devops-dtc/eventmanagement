@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import { AuthProvider } from './contexts/AuthContext';
+import PrivateRoute from './components/PrivateRoute/PrivateRoute';
 import Register from './pages/Auth/Register';
 import Enrollment from './pages/Enrollment/Enrollment';
 import 'react-toastify/dist/ReactToastify.css';
@@ -15,31 +16,55 @@ import ContactUs from './pages/Home/ContactUs';
 import EventManagementDashboard from './pages/EventManagement/EventManagementDashboard';
 import UserManagementDashboard from './pages/EventManagement/UserManagementDashboard';
 
-
 const App = () => {
   return (
-    <AuthProvider>
-      <Router>
+    <Router>
+      <AuthProvider>
         <Routes>
+          {/* Public Routes */}
           <Route path="/" element={<Home />} />
           <Route path="/home" element={<Home />} />
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/enrollment" element={<Enrollment />} />
-          <Route path="/edit-event" element={<EditEvent />} />
-          <Route path="/create-event" element={<CreateEvent />} />
-          <Route path="/profile" element={<Profile />} />
           <Route path="/about" element={<AboutUs />} />
           <Route path="/contact" element={<ContactUs />} />
-          <Route path="/event-management" element={<EventManagementDashboard />} />
-          <Route path="/user-management" element={<UserManagementDashboard />} />
+
+          {/* Protected Routes */}
+          <Route path="/enrollment" element={
+            <PrivateRoute>
+              <Enrollment />
+            </PrivateRoute>
+          } />
+          <Route path="/edit-event" element={
+            <PrivateRoute>
+              <EditEvent />
+            </PrivateRoute>
+          } />
+          <Route path="/create-event" element={
+            <PrivateRoute>
+              <CreateEvent />
+            </PrivateRoute>
+          } />
+          <Route path="/profile" element={
+            <PrivateRoute>
+              <Profile />
+            </PrivateRoute>
+          } />
+          <Route path="/event-management" element={
+            <PrivateRoute>
+              <EventManagementDashboard />
+            </PrivateRoute>
+          } />
+          <Route path="/user-management" element={
+            <PrivateRoute>
+              <UserManagementDashboard />
+            </PrivateRoute>
+          } />
         </Routes>
         <ToastContainer />
-      </Router>
-    </AuthProvider>
+      </AuthProvider>
+    </Router>
   );
 };
 
 export default App;
-
-

@@ -1,4 +1,3 @@
-// src/pages/Auth/Register.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -61,43 +60,45 @@ const Register = () => {
 
     setIsLoading(true);
 
-    // Backend registration logic (commented for future implementation)
-    /*
     try {
-      const response = await registerUser(formData);
-      login(response.user);
-      toast.success('Registration successful!');
-      navigate('/');
+      const response = await fetch('http://localhost:3000/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: formData.fullname,
+          email: formData.email,
+          password: formData.password,
+          role: formData.userType
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Store token and user data
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        // Update auth context
+        login(data.user);
+        
+        toast.success(data.message || 'Registration successful!');
+        navigate('/');
+      } else {
+        toast.error(data.message || 'Registration failed');
+        setErrors(prev => ({
+          ...prev,
+          submit: data.message || 'Registration failed'
+        }));
+      }
     } catch (error) {
-      toast.error(error.message);
+      console.error('Registration error:', error);
+      toast.error('Registration failed. Please try again.');
       setErrors(prev => ({
         ...prev,
-        submit: error.message
-      }));
-    }
-    */
-
-    // Dummy registration logic
-    try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      const newUser = {
-        id: Date.now().toString(),
-        name: formData.fullname,
-        email: formData.email,
-        role: formData.userType
-      };
-
-      login(newUser);
-      toast.success('Registration successful!');
-      // Redirect to home page for all user types
-      navigate('/');
-    } catch (error) {
-      toast.error(error.message);
-      setErrors(prev => ({
-        ...prev,
-        submit: error.message
+        submit: 'Registration failed. Please try again.'
       }));
     } finally {
       setIsLoading(false);
@@ -131,9 +132,9 @@ const Register = () => {
             onChange={handleChange}
           >
             <option value="" disabled>User Type</option>
-            <option value={USER_ROLES.SUPER_ADMIN}>Super Admin</option>
-            <option value={USER_ROLES.ORGANIZER}>Organizer</option>
-            <option value={USER_ROLES.ATTENDEE}>Attendee</option>
+            <option value="Admin">Admin</option>
+            <option value="Organizer">Organizer</option>
+            <option value="Attendee">Attendee</option>
           </select>
           {errors.userType && <div className="error-message">{errors.userType}</div>}
         </div>

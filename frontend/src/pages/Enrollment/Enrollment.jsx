@@ -14,7 +14,7 @@ const Enrollment = () => {
   const eventDetails = location.state?.eventDetails;
   const [isEnrolling, setIsEnrolling] = useState(false);
 
-  const isAdminOrOrganizer = user?.role === USER_ROLES.SUPER_ADMIN || 
+  const isAdminOrOrganizer = user?.role === USER_ROLES.ADMIN || 
                             user?.role === USER_ROLES.ORGANIZER;
 
     if (!user) {

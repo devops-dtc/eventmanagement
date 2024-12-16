@@ -16,7 +16,7 @@ const Navbar = () => {
   };
 
   const isOrganizer = user?.role === USER_ROLES.ORGANIZER;
-  const isAdmin = user?.role === USER_ROLES.SUPER_ADMIN;
+  const isAdmin = user?.role === USER_ROLES.ADMIN;
   const canManageEvents = isOrganizer || isAdmin;
 
   const renderNavItems = () => {
