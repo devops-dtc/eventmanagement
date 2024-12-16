@@ -29,6 +29,7 @@ export const createEvent = async (req, res) => {
             event
         });
     } catch (error) {
+        console.error('Error creating event:', error);
         res.status(500).json({ message: 'Failed to create event' });
     }
 };
@@ -48,6 +49,7 @@ export const getAllEvents = async (req, res) => {
             }
         });
     } catch (error) {
+        console.error('Error fetching all events:', error);
         res.status(500).json({
             success: false,
             message: 'Failed to fetch events'
@@ -59,32 +61,31 @@ export const getUpcomingEvents = async (req, res) => {
     try {
         const [events] = await pool.execute(`
             SELECT 
-                EventID,
-                Title,
-                Description,
-                EventType,
-                StartDate,
-                StartTime,
-                Location,
-                Address,
-                Price,
-                MaxAttendees,
-                AttendeeCount,
-                Published,
-                EventIsApproved
-            FROM EVENT 
-            WHERE StartDate >= CURDATE()
-            AND Published = TRUE 
-            AND EventIsApproved = TRUE 
-            AND EventIsDeleted = FALSE
-            ORDER BY StartDate ASC, StartTime ASC
+                e.*,
+                u.UserFullname as OrganizerName,
+                COUNT(ee.EnrollmentID) as CurrentAttendees
+            FROM EVENT e
+            LEFT JOIN USER u ON e.CreatedBy = u.UserID
+            LEFT JOIN EVENT_ENROLLMENT ee ON e.EventID = ee.EventID
+            WHERE e.StartDate >= CURDATE()
+            AND e.Published = TRUE 
+            AND e.EventIsApproved = TRUE 
+            AND e.EventIsDeleted = FALSE
+            GROUP BY e.EventID
+            ORDER BY e.StartDate ASC, e.StartTime ASC
         `);
+
+        const formattedEvents = events.map(event => ({
+            ...event,
+            AttendeeCount: parseInt(event.CurrentAttendees) || 0
+        }));
 
         res.json({
             success: true,
-            events: events
+            events: formattedEvents
         });
     } catch (error) {
+        console.error('Error fetching upcoming events:', error);
         res.status(500).json({
             success: false,
             message: 'Failed to fetch upcoming events'
@@ -96,32 +97,31 @@ export const getPastEvents = async (req, res) => {
     try {
         const [events] = await pool.execute(`
             SELECT 
-                EventID,
-                Title,
-                Description,
-                EventType,
-                StartDate,
-                StartTime,
-                Location,
-                Address,
-                Price,
-                MaxAttendees,
-                AttendeeCount,
-                Published,
-                EventIsApproved
-            FROM EVENT 
-            WHERE StartDate < CURDATE()
-            AND Published = TRUE 
-            AND EventIsApproved = TRUE 
-            AND EventIsDeleted = FALSE
-            ORDER BY StartDate DESC, StartTime DESC
+                e.*,
+                u.UserFullname as OrganizerName,
+                COUNT(ee.EnrollmentID) as CurrentAttendees
+            FROM EVENT e
+            LEFT JOIN USER u ON e.CreatedBy = u.UserID
+            LEFT JOIN EVENT_ENROLLMENT ee ON e.EventID = ee.EventID
+            WHERE e.StartDate < CURDATE()
+            AND e.Published = TRUE 
+            AND e.EventIsApproved = TRUE 
+            AND e.EventIsDeleted = FALSE
+            GROUP BY e.EventID
+            ORDER BY e.StartDate DESC, e.StartTime DESC
         `);
+
+        const formattedEvents = events.map(event => ({
+            ...event,
+            AttendeeCount: parseInt(event.CurrentAttendees) || 0
+        }));
 
         res.json({
             success: true,
-            events: events || []
+            events: formattedEvents || []
         });
     } catch (error) {
+        console.error('Error fetching past events:', error);
         res.status(500).json({
             success: false,
             message: 'Failed to fetch past events'
@@ -146,6 +146,7 @@ export const getEventById = async (req, res) => {
             event
         });
     } catch (error) {
+        console.error('Error fetching event by ID:', error);
         res.status(500).json({
             success: false,
             message: 'Failed to fetch event'
@@ -174,6 +175,7 @@ export const updateEvent = async (req, res) => {
             event: updatedEvent
         });
     } catch (error) {
+        console.error('Error updating event:', error);
         res.status(500).json({ message: 'Failed to update event' });
     }
 };
@@ -196,19 +198,52 @@ export const deleteEvent = async (req, res) => {
         await removeEvent(eventId);
         res.json({ message: 'Event deleted successfully' });
     } catch (error) {
+        console.error('Error deleting event:', error);
         res.status(500).json({ message: 'Failed to delete event' });
     }
 };
 
 export const getEventsByOrganizer = async (req, res) => {
     try {
-        const organizerId = req.user.UserID;
-        const events = await findEventsByOrganizerId(organizerId);
+        const userId = req.user.UserID;
+        const userType = req.user.UserType;
+
+        let query = `
+            SELECT 
+                e.*,
+                u.UserFullname as OrganizerName,
+                COUNT(ee.EnrollmentID) as CurrentAttendees
+            FROM EVENT e
+            LEFT JOIN USER u ON e.CreatedBy = u.UserID
+            LEFT JOIN EVENT_ENROLLMENT ee ON e.EventID = ee.EventID
+            WHERE e.EventIsDeleted = FALSE
+        `;
+
+        if (userType !== 'Admin') {
+            query += ` AND e.CreatedBy = ?`;
+        }
+
+        query += `
+            GROUP BY e.EventID
+            ORDER BY e.StartDate DESC, e.StartTime DESC
+        `;
+
+        const [events] = await pool.execute(
+            query,
+            userType !== 'Admin' ? [userId] : []
+        );
+
+        const formattedEvents = events.map(event => ({
+            ...event,
+            AttendeeCount: parseInt(event.CurrentAttendees) || 0
+        }));
+
         res.json({
             success: true,
-            events
+            events: formattedEvents
         });
     } catch (error) {
+        console.error('Error fetching organizer events:', error);
         res.status(500).json({ 
             success: false,
             message: 'Failed to fetch organizer events' 
@@ -228,6 +263,7 @@ export const approveEvent = async (req, res) => {
             event: updatedEvent
         });
     } catch (error) {
+        console.error('Error approving event:', error);
         res.status(500).json({ 
             success: false,
             message: 'Failed to approve event' 
@@ -263,6 +299,7 @@ export const publishEvent = async (req, res) => {
             event: updatedEvent
         });
     } catch (error) {
+        console.error('Error publishing event:', error);
         res.status(500).json({ 
             success: false,
             message: 'Failed to publish event' 
