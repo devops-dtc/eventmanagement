@@ -1,50 +1,54 @@
+// index.js
+
 import express from 'express';
-import axios, { isAxiosError } from 'axios';
-import mysql from 'mysql2';
+import cors from 'cors';
+import config from './src/config/config.js';
+import { connectDB } from './src/config/database.js';
+import authRoutes from './src/routes/auth.routes.js';
+import eventRoutes from './src/routes/event.routes.js';
+import userRoutes from './src/routes/user.routes.js';
+import enrollRoutes from './src/routes/enroll.routes.js';
+import { errorHandler } from './src/middlewares/errorHandler.js';
 
 const app = express();
-const port = 3000;
+const { PORT, SECURITY } = config;
 
-// app.use(cors());
+// Middleware
+app.use(express.json());
+app.use(cors(SECURITY.CORS_OPTIONS));
 
-const db  = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'test',
-    port: 5222,
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/events', eventRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/enroll', enrollRoutes);
+
+// Test route
+app.get('/', (req, res) => {
+    res.json({ message: 'Backend server is running' });
 });
 
-app.get('/loginSubmit', async (req, res) => {
-    const details = {
-        UserID: 1,
-        UserFullName: 'Sreyan Dey',
-        UserEmail: 'sd@email.com',
-        UserPassword: 'testpass',
-        UserType: 'Attendee',
-        CreatedAt: null,
-        UpdatedAt: null
-    }; //The login details enter in the frontend is a object
+// Error handling
+app.use(errorHandler);
 
-    // console.log(details.userName);
+// Start server
+const startServer = async () => {
+    try {
+        await connectDB();  // Connect to the database
+        app.listen(PORT, () => {
+            console.log(`Server running on port ${PORT}`);
+            console.log(`Environment: ${config.NODE_ENV}`);
+        });
+    } catch (error) {
+        console.error('Failed to start server:', error);
+        process.exit(1);  // Exit the application if server fails to start
+    }
+};
 
-    const qData = await db.promise().query("SELECT * FROM `user` WHERE UserFullName = ?", [details.UserFullName]);
-    let userID;
-    qData[0].forEach(element => {
-        userID = element.UserID
-    });
-    console.log(userID);
+startServer();
 
-    let isAuthenticated = false;
-    if (JSON.stringify(details) === JSON.stringify(qData[0][userID - 1])) {
-        isAuthenticated = true;
-    };
-
-    isAuthenticated ? console.log('Login successful') : console.log('Login credentials wrong');
-});
-
-
-
-app.listen(port, () => {
-    console.log(`Backend listening on ${port}`);
+// Graceful shutdown
+process.on('SIGTERM', () => {
+    console.log('SIGTERM received. Shutting down gracefully...');
+    process.exit(0);
 });
