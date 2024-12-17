@@ -13,26 +13,48 @@ import { validateEvent } from '../utils/validation.js';
 
 export const createEvent = async (req, res) => {
     try {
+        console.log('Create event request:', req.body);
+
         const eventData = {
             ...req.body,
-            CreatedBy: req.user.UserID
+            CreatedBy: req.user.UserID,
+            Published: false,
+            EventIsDeleted: false,
+            EventIsApproved: false,
+            EventType: req.body.EventType || 'Physical',
+            MaxAttendees: req.body.MaxAttendees || 100,
+            TicketsAvailable: req.body.TicketsAvailable || 100,
+            Price: req.body.Price || 0
         };
 
         const { isValid, errors } = validateEvent(eventData);
         if (!isValid) {
-            return res.status(400).json({ errors });
+            return res.status(400).json({ 
+                success: false,
+                message: 'Validation failed',
+                errors 
+            });
         }
 
         const event = await createNewEvent(eventData);
+        
         res.status(201).json({
+            success: true,
             message: 'Event created successfully',
             event
         });
     } catch (error) {
         console.error('Error creating event:', error);
-        res.status(500).json({ message: 'Failed to create event' });
+        res.status(500).json({ 
+            success: false,
+            message: 'Failed to create event',
+            error: error.message 
+        });
     }
 };
+
+// ... [rest of your controller functions remain the same]
+
 
 export const getAllEvents = async (req, res) => {
     try {

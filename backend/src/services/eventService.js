@@ -1,31 +1,67 @@
 import { pool } from '../config/database.js';
-import { paginateResults } from '../utils/helpers.js';
 
 export const createNewEvent = async (eventData) => {
-    const {
-        Title, Description, EventType, CategoryID,
-        StartDate, StartTime, EndDate, EndTime,
-        Location, Address, Price, MaxAttendees,
-        CreatedBy
-    } = eventData;
+    try {
+        const {
+            Title,
+            Description,
+            EventType,
+            StartDate,
+            StartTime,
+            EndDate,
+            EndTime,
+            Location,
+            Address,
+            Price,
+            MaxAttendees,
+            CreatedBy,
+            Published,
+            EventIsDeleted,
+            EventIsApproved
+        } = eventData;
 
-    const [result] = await pool.execute(
-        `INSERT INTO EVENT (
-            Title, Description, EventType, CategoryID,
-            StartDate, StartTime, EndDate, EndTime,
-            Location, Address, Price, MaxAttendees,
-            TicketsAvailable, CreatedBy
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-            Title, Description, EventType, CategoryID,
-            StartDate, StartTime, EndDate, EndTime,
-            Location, Address, Price, MaxAttendees,
-            MaxAttendees, CreatedBy
-        ]
-    );
+        const [result] = await pool.execute(
+            `INSERT INTO EVENT (
+                Title, Description, EventType,
+                StartDate, StartTime, EndDate, EndTime,
+                Location, Address, Price, MaxAttendees,
+                TicketsAvailable, CreatedBy, Published,
+                EventIsDeleted, EventIsApproved
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+                Title,
+                Description,
+                EventType,
+                StartDate,
+                StartTime,
+                EndDate || StartDate,
+                EndTime || StartTime,
+                Location,
+                Address,
+                Price,
+                MaxAttendees,
+                MaxAttendees, // TicketsAvailable starts equal to MaxAttendees
+                CreatedBy,
+                Published,
+                EventIsDeleted,
+                EventIsApproved
+            ]
+        );
 
-    return findEventById(result.insertId);
+        const [newEvent] = await pool.execute(
+            'SELECT * FROM EVENT WHERE EventID = ?',
+            [result.insertId]
+        );
+
+        return newEvent[0];
+    } catch (error) {
+        console.error('Error in createNewEvent:', error);
+        throw new Error(`Failed to create event: ${error.message}`);
+    }
 };
+
+// ... [rest of your service functions remain the same]
+
 
 export const findAllEvents = async (options = {}) => {
     try {

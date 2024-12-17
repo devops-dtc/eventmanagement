@@ -15,25 +15,25 @@ import { authenticateToken, checkRole } from '../middlewares/auth.js';
 
 const router = express.Router();
 
-// Public routes
-router.get('/upcoming', getUpcomingEvents);
-router.get('/past', getPastEvents);
-router.get('/:id', getEventById);
-router.get('/', getUpcomingEvents);  // Default route shows upcoming events
-
-// Protected routes
+// Protected routes first
 router.use(authenticateToken);
 
-// Route for both Organizer and Admin to get their events
+// Specific routes before parameter routes
+router.get('/upcoming', getUpcomingEvents);
+router.get('/past', getPastEvents);
 router.get('/organizer/events', checkRole(['Organizer', 'Admin']), getEventsByOrganizer);
 
-// Organizer & Admin routes
-router.post('/', checkRole(['Organizer', 'Admin']), createEvent);
+// Create event route
+router.post('/create', checkRole(['Organizer', 'Admin']), createEvent);
+
+// Parameter routes
+router.get('/:id', getEventById);
 router.put('/:id', checkRole(['Organizer', 'Admin']), updateEvent);
 router.delete('/:id', checkRole(['Organizer', 'Admin']), deleteEvent);
 router.put('/:id/publish', checkRole(['Organizer', 'Admin']), publishEvent);
-
-// Admin only routes
 router.put('/:id/approve', checkRole(['Admin']), approveEvent);
+
+// Default route
+router.get('/', getUpcomingEvents);
 
 export default router;

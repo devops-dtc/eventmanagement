@@ -5,7 +5,7 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Layout/Navbar/Navbar';
 import { USER_ROLES } from '../../utils/constants';
 import { toast } from 'react-toastify';
-import styles from '../../styles/EditEvent.module.css'; // We can use the same styles
+import styles from '../../styles/EditEvent.module.css';
 import MessageDialog from '../../components/MessageDialog/MessageDialog';
 
 const CreateEvent = () => {
@@ -43,8 +43,23 @@ const CreateEvent = () => {
     }));
   };
 
+  const convertTimeToMySQLFormat = (timeString) => {
+    if (!timeString) return null;
+    try {
+      const [timePart, period] = timeString.split(' ');
+      let [hours, minutes] = timePart.split(':').map(num => parseInt(num, 10));
+
+      if (period === 'PM' && hours !== 12) hours += 12;
+      if (period === 'AM' && hours === 12) hours = 0;
+
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
+    } catch (error) {
+      console.error('Time conversion error:', error);
+      return null;
+    }
+  };
+
   const handleCreateClick = () => {
-    // Validate required fields
     const requiredFields = ['title', 'date', 'time', 'location', 'address'];
     const missingFields = requiredFields.filter(field => !eventData[field]);
 
@@ -68,14 +83,61 @@ const CreateEvent = () => {
         }
       }
 
-      // Here you would make your API call to create the event
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      toast.success('Event created successfully');
-      navigate('/home', { 
-        state: { activeTab: 'created' }
+      const startTime = convertTimeToMySQLFormat(eventData.time);
+      const endTime = eventData.endTime ? 
+        convertTimeToMySQLFormat(eventData.endTime) : 
+        startTime;
+
+      if (!startTime) {
+        toast.error('Invalid start time format');
+        return;
+      }
+
+      const token = localStorage.getItem('token');
+      const requestData = {
+        Title: eventData.title,
+        Description: eventData.description,
+        EventType: 'Physical',
+        StartDate: eventData.date,
+        StartTime: startTime,
+        EndDate: eventData.endDate || eventData.date,
+        EndTime: endTime,
+        Location: eventData.location,
+        Address: eventData.address,
+        Price: 0,
+        MaxAttendees: 100,
+        TicketsAvailable: 100
+      };
+
+      console.log('Sending request with data:', requestData);
+
+      const response = await fetch('http://localhost:3000/api/events/create', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestData)
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create event');
+      }
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success('Event created successfully');
+        navigate('/home', { 
+          state: { activeTab: 'created' }
+        });
+      } else {
+        throw new Error(data.message || 'Failed to create event');
+      }
     } catch (error) {
-      toast.error('Failed to create event');
+      console.error('Error details:', error);
+      toast.error(error.message || 'Failed to create event');
     } finally {
       setShowConfirmDialog(false);
     }
@@ -85,7 +147,6 @@ const CreateEvent = () => {
     setShowConfirmDialog(false);
   };
 
-  // Helper function to format time for display
   const formatTimeForDisplay = (timeString) => {
     if (!timeString) return '';
     try {
@@ -99,21 +160,19 @@ const CreateEvent = () => {
     }
   };
 
-  // Helper function to convert 12-hour format to 24-hour format
   const convertTo24Hour = (time12h) => {
     if (!time12h) return '';
     const [time, modifier] = time12h.split(' ');
     let [hours, minutes] = time.split(':');
+    hours = parseInt(hours);
     
-    if (hours === '12') {
-      hours = '00';
+    if (hours === 12) {
+      hours = modifier === 'PM' ? 12 : 0;
+    } else if (modifier === 'PM') {
+      hours += 12;
     }
     
-    if (modifier === 'PM') {
-      hours = parseInt(hours, 10) + 12;
-    }
-    
-    return `${hours}:${minutes}`;
+    return `${hours.toString().padStart(2, '0')}:${minutes}`;
   };
 
   const renderDateInput = (field, label, value, placeholder) => (
