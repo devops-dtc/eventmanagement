@@ -26,8 +26,11 @@ const EditEvent = () => {
     location: '',
     zip: '',
     address: '',
-    description: ''
+    description: '',
+    image: ''
   });
+
+  
 
   useEffect(() => {
     const fetchEventDetails = async () => {

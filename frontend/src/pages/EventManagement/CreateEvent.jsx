@@ -22,7 +22,8 @@ const CreateEvent = () => {
     location: '',
     zip: '',
     address: '',
-    description: ''
+    description: '',
+    image: ''
   });
 
   if (!isAuthenticated()) {
@@ -104,12 +105,11 @@ const CreateEvent = () => {
         EndTime: endTime,
         Location: eventData.location,
         Address: eventData.address,
+        Image: eventData.image || null,
         Price: 0,
         MaxAttendees: 100,
         TicketsAvailable: 100
       };
-
-      console.log('Sending request with data:', requestData);
 
       const response = await fetch('http://localhost:3000/api/events/create', {
         method: 'POST',
@@ -147,33 +147,20 @@ const CreateEvent = () => {
     setShowConfirmDialog(false);
   };
 
-  const formatTimeForDisplay = (timeString) => {
-    if (!timeString) return '';
-    try {
-      const [hours, minutes] = timeString.split(':');
-      const hour = parseInt(hours);
-      const ampm = hour >= 12 ? 'PM' : 'AM';
-      const hour12 = hour % 12 || 12;
-      return `${hour12}:${minutes} ${ampm}`;
-    } catch {
-      return timeString;
-    }
-  };
-
-  const convertTo24Hour = (time12h) => {
-    if (!time12h) return '';
-    const [time, modifier] = time12h.split(' ');
-    let [hours, minutes] = time.split(':');
-    hours = parseInt(hours);
-    
-    if (hours === 12) {
-      hours = modifier === 'PM' ? 12 : 0;
-    } else if (modifier === 'PM') {
-      hours += 12;
-    }
-    
-    return `${hours.toString().padStart(2, '0')}:${minutes}`;
-  };
+  const renderImageInput = () => (
+    <div className={styles['form-group']}>
+      <label className={styles['form-label']}>Event Image URL</label>
+      <div className={styles['input-box']}>
+        <input
+          type="text"
+          value={eventData.image || ''}
+          onChange={(e) => handleInputChange('image', e.target.value)}
+          className={styles['editable-input']}
+          placeholder="Enter image URL (e.g., https://example.com/image.jpg)"
+        />
+      </div>
+    </div>
+  );
 
   const renderDateInput = (field, label, value, placeholder) => (
     <div className={styles['form-group']}>
@@ -196,21 +183,8 @@ const CreateEvent = () => {
       <div className={styles['input-box']}>
         <input
           type="time"
-          value={convertTo24Hour(value) || ''}
-          onChange={(e) => {
-            const time24 = e.target.value;
-            if (time24) {
-              const date = new Date(`2000-01-01T${time24}`);
-              const timeString = date.toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
-              });
-              handleInputChange(field, timeString);
-            } else {
-              handleInputChange(field, '');
-            }
-          }}
+          value={value || ''}
+          onChange={(e) => handleInputChange(field, e.target.value)}
           className={styles['editable-input']}
           placeholder={placeholder}
         />
@@ -255,15 +229,22 @@ const CreateEvent = () => {
               {renderInput('address', 'Venue Address', eventData.address, 'Enter full address')}
             </div>
 
-            <div className={styles['form-group']}>
-              <label className={styles['form-label']}>Description</label>
-              <div className={`${styles['input-box']} ${styles['description']}`}>
-                <textarea
-                  value={eventData.description || ''}
-                  placeholder="Enter event description"
-                  onChange={(e) => handleInputChange('description', e.target.value)}
-                  className={styles['editable-input']}
-                />
+            <div className={styles['form-content']}>
+              <div className={styles['description-box']}>
+                <div className={styles['form-group']}>
+                  <label className={styles['form-label']}>Description</label>
+                  <div className={`${styles['input-box']} ${styles['description']}`}>
+                    <textarea
+                      value={eventData.description || ''}
+                      placeholder="Enter event description"
+                      onChange={(e) => handleInputChange('description', e.target.value)}
+                      className={styles['editable-input']}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className={styles['description-box']}>
+                {renderImageInput()}
               </div>
             </div>
           </div>
