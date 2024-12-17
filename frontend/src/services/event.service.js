@@ -1,66 +1,63 @@
-// src/services/event.service.js
+const API_URL = 'http://localhost:3000/api';
 
-// Mock delay function
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+export const enrollInEvent = async (eventId, userId) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/enroll/${eventId}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include',
+      body: JSON.stringify({ userId, eventId })
+    });
 
-// Function to get events based on type
-export const getEvents = async (type, userRole = 'Attendee') => {
-  await delay(1000);
-  return {
-    data: [], // Your existing data array will be here
-    success: true
-  };
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    throw new Error('Failed to enroll in event');
+  }
 };
 
-// Function to enroll in an event
-export const enrollInEvent = async (eventId) => {
-  await delay(500);
-  return {
-    success: true,
-    message: 'Successfully enrolled in event'
-  };
+export const getEvents = async (type) => {
+  try {
+    const token = localStorage.getItem('token');
+    const headers = {
+      'Content-Type': 'application/json'
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_URL}/events/${type}`, {
+      headers,
+      credentials: 'include'
+    });
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    throw new Error('Failed to fetch events');
+  }
 };
 
-// Function to delete an event (admin only)
 export const deleteEvent = async (eventId) => {
-  await delay(500);
-  return {
-    success: true,
-    message: 'Event successfully deleted'
-  };
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_URL}/events/${eventId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include'
+    });
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    throw new Error('Failed to delete event');
+  }
 };
-
-
-
-//User Later for service
-
-// import axios from 'axios';
-
-// const api = axios.create({
-//   baseURL: process.env.REACT_APP_API_URL
-// });
-
-// // Add token to requests
-// api.interceptors.request.use((config) => {
-//   const token = localStorage.getItem('token');
-//   if (token) {
-//     config.headers.Authorization = `Bearer ${token}`;
-//   }
-//   return config;
-// });
-
-// export const getEvents = async (type, userId) => {
-//   return api.get(`/events/${type}`, { params: { userId } });
-// };
-
-// export const enrollInEvent = async (eventId, userId) => {
-//   return api.post(`/events/${eventId}/enroll`, { userId });
-// };
-
-// export const createEvent = async (eventData) => {
-//   return api.post('/events', eventData);
-// };
-
-// export const updateEvent = async (eventId, eventData) => {
-//   return api.put(`/events/${eventId}`, eventData);
-// };

@@ -1,4 +1,3 @@
-// src/pages/Enrollment/Enrollment.jsx
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
@@ -17,29 +16,41 @@ const Enrollment = () => {
   const isAdminOrOrganizer = user?.role === USER_ROLES.ADMIN || 
                             user?.role === USER_ROLES.ORGANIZER;
 
-    if (!user) {
-      return <Navigate to="/" />;
-    }
+  if (!user) {
+    return <Navigate to="/" />;
+  }
 
-    if (!eventDetails) {
-      return <Navigate to="/events" />;
-    }
+  if (!eventDetails) {
+    return <Navigate to="/events" />;
+  }
 
   const handleEnroll = async () => {
     setIsEnrolling(true);
     
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      toast.success('Successfully enrolled in event!');
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:3000/api/enroll/events/${eventDetails.id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          paymentAmount: eventDetails.price || 0,
+          ticketType: 'Standard'
+        })
+      });
+
+      const data = await response.json();
       
-      // Navigate based on user role
-      if (isAdminOrOrganizer) {
-        navigate('/home');
+      if (data.success) {
+        toast.success('Successfully enrolled in event!');
+        navigate('/');
       } else {
-        navigate('/home');
+        toast.error(data.message || 'Failed to enroll in event');
       }
     } catch (error) {
+      console.error('Enrollment error:', error);
       toast.error('Failed to enroll in event');
     } finally {
       setIsEnrolling(false);
@@ -83,9 +94,11 @@ const Enrollment = () => {
               <button 
                 className="enrollment-submit-button"
                 onClick={handleEnroll}
-                disabled={isEnrolling}
+                disabled={isEnrolling || eventDetails.attendees >= eventDetails.maxAttendees}
               >
-                {isEnrolling ? 'Enrolling...' : 'Enroll Now'}
+                {isEnrolling ? 'Enrolling...' : 
+                 eventDetails.attendees >= eventDetails.maxAttendees ? 'Event Full' :
+                 'Enroll Now'}
               </button>
             </div>
           </div>

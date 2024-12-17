@@ -23,6 +23,7 @@ const HomePage = () => {
   const isAdmin = user?.role === 'Admin';
   const canManageEvents = isOrganizer || isAdmin;
 
+  // Handle tab changes based on authentication
   useEffect(() => {
     const token = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
@@ -34,6 +35,7 @@ const HomePage = () => {
     }
   }, [user, isAuthenticated]);
 
+  // Fetch events with updated handling for attendee count
   useEffect(() => {
     const fetchEvents = async () => {
       setLoading(true);
@@ -76,7 +78,11 @@ const HomePage = () => {
             break;
         }
 
-        const response = await fetch(`http://localhost:3000${endpoint}`, { headers });
+        // Updated fetch call with credentials
+        const response = await fetch(`http://localhost:3000${endpoint}`, { 
+          headers,
+          credentials: 'include'
+        });
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -85,11 +91,17 @@ const HomePage = () => {
         const data = await response.json();
         
         if (data.success) {
+          // Updated event formatting with proper attendee count handling
           const formattedEvents = data.events.map(event => ({
             ...event,
             StartDate: new Date(event.StartDate).toLocaleDateString(),
-            StartTime: event.StartTime.slice(0, 5)  // Format time to HH:MM
+            StartTime: event.StartTime ? event.StartTime.slice(0, 5) : '',
+            // Handle different possible names for attendee count and ensure integer conversion
+            AttendeeCount: parseInt(event.CurrentAttendees || event.AttendeeCount) || 0,
+            MaxAttendees: parseInt(event.MaxAttendees) || 0
           }));
+
+          console.log('Formatted events:', formattedEvents); // Debug log
 
           setEvents(prev => ({
             ...prev,
@@ -99,6 +111,7 @@ const HomePage = () => {
           toast.error(data.message || 'Failed to fetch events');
         }
       } catch (error) {
+        console.error('Error fetching events:', error);
         toast.error(`Failed to fetch ${activeTab} events`);
       } finally {
         setLoading(false);
@@ -128,10 +141,25 @@ const HomePage = () => {
 
   const handleNavigateToEvent = (event) => {
     if (isAuthenticated()) {
-      navigate(`/event/${event.EventID}`);
+      navigate('/enrollment', { 
+        state: { 
+          eventDetails: {
+            id: event.EventID,
+            title: event.Title,
+            description: event.Description,
+            date: event.StartDate,
+            time: event.StartTime,
+            location: event.Location,
+            attendees: event.AttendeeCount || 0,
+            maxAttendees: event.MaxAttendees,
+            image: event.Image,
+            price: event.Price || 0
+          }
+        }
+      });
     } else {
       navigate('/login', { 
-        state: { redirectUrl: `/event/${event.EventID}` }
+        state: { redirectUrl: '/enrollment' }
       });
     }
   };
@@ -142,6 +170,7 @@ const HomePage = () => {
     navigate(`/edit-event/${event.EventID}`);
   };
 
+  // Updated remove enrollment handler with proper error handling and data refresh
   const handleRemoveEnrollment = async (enrollmentId) => {
     try {
       const token = localStorage.getItem('token');
@@ -150,21 +179,50 @@ const HomePage = () => {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
-        }
+        },
+        credentials: 'include'
       });
 
       const data = await response.json();
       
       if (data.success) {
+        // Remove from enrolled events
         setEvents(prev => ({
           ...prev,
           enrolled: prev.enrolled.filter(event => event.EnrollmentID !== enrollmentId)
         }));
+
+        // Refresh upcoming events to update attendee count
+        const upcomingResponse = await fetch(`http://localhost:3000/api/events/upcoming`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
+        });
+
+        const upcomingData = await upcomingResponse.json();
+        if (upcomingData.success) {
+          const formattedEvents = upcomingData.events.map(event => ({
+            ...event,
+            StartDate: new Date(event.StartDate).toLocaleDateString(),
+            StartTime: event.StartTime ? event.StartTime.slice(0, 5) : '',
+            AttendeeCount: parseInt(event.CurrentAttendees || event.AttendeeCount) || 0,
+            MaxAttendees: parseInt(event.MaxAttendees) || 0
+          }));
+
+          setEvents(prev => ({
+            ...prev,
+            upcoming: formattedEvents
+          }));
+        }
+
         toast.success('Enrollment removed successfully');
       } else {
         toast.error(data.message);
       }
     } catch (error) {
+      console.error('Error removing enrollment:', error);
       toast.error('Failed to remove enrollment');
     }
   };
