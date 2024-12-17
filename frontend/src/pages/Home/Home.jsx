@@ -1,3 +1,4 @@
+// src/pages/Events/HomePage.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -23,19 +24,15 @@ const HomePage = () => {
   const isAdmin = user?.role === 'Admin';
   const canManageEvents = isOrganizer || isAdmin;
 
-  // Handle tab changes based on authentication
   useEffect(() => {
     const token = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
     
     if (!token || !storedUser) {
       setActiveTab('upcoming');
-    } else if (activeTab === 'past') {
-      setActiveTab('upcoming');
     }
   }, [user, isAuthenticated]);
 
-  // Fetch events with updated handling for attendee count
   useEffect(() => {
     const fetchEvents = async () => {
       setLoading(true);
@@ -66,10 +63,6 @@ const HomePage = () => {
             endpoint = '/api/events/organizer/events';
             break;
           case 'past':
-            if (isAuthenticated()) {
-              setActiveTab('upcoming');
-              return;
-            }
             endpoint = '/api/events/past';
             break;
           case 'upcoming':
@@ -78,7 +71,6 @@ const HomePage = () => {
             break;
         }
 
-        // Updated fetch call with credentials
         const response = await fetch(`http://localhost:3000${endpoint}`, { 
           headers,
           credentials: 'include'
@@ -91,17 +83,13 @@ const HomePage = () => {
         const data = await response.json();
         
         if (data.success) {
-          // Updated event formatting with proper attendee count handling
           const formattedEvents = data.events.map(event => ({
             ...event,
             StartDate: new Date(event.StartDate).toLocaleDateString(),
             StartTime: event.StartTime ? event.StartTime.slice(0, 5) : '',
-            // Handle different possible names for attendee count and ensure integer conversion
             AttendeeCount: parseInt(event.CurrentAttendees || event.AttendeeCount) || 0,
             MaxAttendees: parseInt(event.MaxAttendees) || 0
           }));
-
-          console.log('Formatted events:', formattedEvents); // Debug log
 
           setEvents(prev => ({
             ...prev,
@@ -119,24 +107,28 @@ const HomePage = () => {
     };
 
     fetchEvents();
-  }, [activeTab, isAuthenticated, canManageEvents, user]);
+  }, [activeTab, isAuthenticated, canManageEvents]);
 
   const getTabs = () => {
-    return !isAuthenticated() 
-      ? [
-          { value: 'upcoming', label: 'Upcoming Events' },
-          { value: 'past', label: 'Past Events' }
-        ]
-      : canManageEvents 
-        ? [
-            { value: 'upcoming', label: 'Upcoming Events' },
-            { value: 'enrolled', label: 'Enrolled Events' },
-            { value: 'created', label: 'Created Events' }
-          ]
-        : [
-            { value: 'upcoming', label: 'Upcoming Events' },
-            { value: 'enrolled', label: 'Enrolled Events' }
-          ];
+    if (!isAuthenticated()) {
+      return [
+        { value: 'upcoming', label: 'Upcoming Events' },
+        { value: 'past', label: 'Past Events' }
+      ];
+    }
+    
+    if (canManageEvents) {
+      return [
+        { value: 'upcoming', label: 'Upcoming Events' },
+        { value: 'enrolled', label: 'Enrolled Events' },
+        { value: 'created', label: 'Created Events' }
+      ];
+    }
+    
+    return [
+      { value: 'upcoming', label: 'Upcoming Events' },
+      { value: 'enrolled', label: 'Enrolled Events' }
+    ];
   };
 
   const handleNavigateToEvent = (event) => {
@@ -164,13 +156,29 @@ const HomePage = () => {
     }
   };
 
+
   const handleEditEvent = async (event, e) => {
     e.preventDefault();
     e.stopPropagation();
-    navigate(`/edit-event/${event.EventID}`);
+    navigate('/edit-event', {
+      state: {
+        eventId: event.EventID,
+        eventDetails: {
+          title: event.Title,
+          description: event.Description,
+          date: event.StartDate,
+          time: event.StartTime,
+          endDate: event.EndDate,
+          endTime: event.EndTime,
+          location: event.Location,
+          address: event.Address,
+          zip: event.ZipCode
+        }
+      }
+    });
   };
 
-  // Updated remove enrollment handler with proper error handling and data refresh
+
   const handleRemoveEnrollment = async (enrollmentId) => {
     try {
       const token = localStorage.getItem('token');
@@ -186,13 +194,11 @@ const HomePage = () => {
       const data = await response.json();
       
       if (data.success) {
-        // Remove from enrolled events
         setEvents(prev => ({
           ...prev,
           enrolled: prev.enrolled.filter(event => event.EnrollmentID !== enrollmentId)
         }));
 
-        // Refresh upcoming events to update attendee count
         const upcomingResponse = await fetch(`http://localhost:3000/api/events/upcoming`, {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -248,7 +254,9 @@ const HomePage = () => {
           Edit Event
         </button>
       );
-    } else if (activeTab === 'enrolled') {
+    }
+
+    if (activeTab === 'enrolled') {
       return (
         <button 
           className="enroll-button"
@@ -257,18 +265,20 @@ const HomePage = () => {
           Remove Enrollment
         </button>
       );
-    } else if (activeTab === 'past') {
-      return null;
-    } else {
-      return (
-        <button 
-          className="enroll-button"
-          onClick={() => handleNavigateToEvent(event)}
-        >
-          Enroll Now
-        </button>
-      );
     }
+
+    if (activeTab === 'past') {
+      return null;
+    }
+
+    return (
+      <button 
+        className="enroll-button"
+        onClick={() => handleNavigateToEvent(event)}
+      >
+        Enroll Now
+      </button>
+    );
   };
 
   const getNoEventsMessage = () => {

@@ -1,5 +1,5 @@
 // src/pages/Events/EditEvent.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Layout/Navbar/Navbar';
@@ -14,21 +14,67 @@ const EditEvent = () => {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const sourceRoute = location.state?.sourceRoute || '/home';
+  const [loading, setLoading] = useState(true);
+  const eventId = location.state?.eventId;
   
-  const [eventData, setEventData] = useState(
-    location.state?.eventDetails || {
-      title: '',
-      date: '',
-      time: '',
-      endDate: '',
-      endTime: '',
-      location: '',
-      zip: '',
-      address: '',
-      description: ''
-    }
-  );
+  const [eventData, setEventData] = useState({
+    title: '',
+    date: '',
+    time: '',
+    endDate: '',
+    endTime: '',
+    location: '',
+    zip: '',
+    address: '',
+    description: ''
+  });
+
+  useEffect(() => {
+    const fetchEventDetails = async () => {
+      if (!eventId) {
+        toast.error('No event selected');
+        navigate('/home');
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`http://localhost:3000/api/events/${eventId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch event details');
+        }
+
+        const data = await response.json();
+        if (data.success) {
+          setEventData({
+            title: data.event.Title,
+            date: new Date(data.event.StartDate).toISOString().split('T')[0],
+            time: data.event.StartTime,
+            endDate: data.event.EndDate ? new Date(data.event.EndDate).toISOString().split('T')[0] : '',
+            endTime: data.event.EndTime || '',
+            location: data.event.Location,
+            zip: data.event.ZipCode || '',
+            address: data.event.Address,
+            description: data.event.Description
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching event details:', error);
+        toast.error('Failed to fetch event details');
+        navigate('/home');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEventDetails();
+  }, [eventId, navigate]);
 
   if (!isAuthenticated()) {
     return <Navigate to="/login" />;
@@ -41,10 +87,21 @@ const EditEvent = () => {
     return <Navigate to="/home" />;
   }
 
-  if (!location.state?.eventDetails) {
-    toast.error('No event details provided');
-    return <Navigate to={sourceRoute} />;
-  }
+  const convertTimeToMySQLFormat = (timeString) => {
+    if (!timeString) return null;
+    try {
+      const [timePart, period] = timeString.split(' ');
+      let [hours, minutes] = timePart.split(':').map(num => parseInt(num, 10));
+
+      if (period === 'PM' && hours !== 12) hours += 12;
+      if (period === 'AM' && hours === 12) hours = 0;
+
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
+    } catch (error) {
+      console.error('Time conversion error:', error);
+      return null;
+    }
+  };
 
   const handleInputChange = (field, value) => {
     setEventData(prev => ({
@@ -63,33 +120,93 @@ const EditEvent = () => {
 
   const handleSaveConfirm = async () => {
     try {
-      const startDate = new Date(eventData.date);
-      const endDate = new Date(eventData.endDate);
-      
-      if (endDate < startDate) {
-        toast.error('End date cannot be before start date');
-        return;
-      }
+        // Validate required fields first
+        if (!eventData.title || !eventData.date || !eventData.location) {
+            toast.error('Please fill in all required fields');
+            return;
+        }
 
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      toast.success('Event updated successfully');
-      
-      // Navigate back to the source route
-      navigate(sourceRoute, { 
-        state: { activeTab: location.state?.activeTab || 'created' }
-      });
+        // Convert times to MySQL format
+        const startTime = eventData.time ? convertTimeToMySQLFormat(eventData.time) : null;
+        if (!startTime) {
+            toast.error('Invalid start time format');
+            return;
+        }
+
+        // Handle end time - if not provided, use start time
+        const endTime = eventData.endTime ? 
+            convertTimeToMySQLFormat(eventData.endTime) : 
+            startTime;
+
+        // Validate dates if end date is provided
+        if (eventData.endDate) {
+            const startDate = new Date(eventData.date);
+            const endDate = new Date(eventData.endDate);
+            
+            if (endDate < startDate) {
+                toast.error('End date cannot be before start date');
+                return;
+            }
+        }
+
+        // Prepare request body with all required fields and proper data types
+        const requestBody = {
+            EventID: parseInt(eventId),
+            Title: eventData.title.trim(),
+            Description: eventData.description ? eventData.description.trim() : '',
+            EventType: 'Physical',
+            StartDate: eventData.date,
+            StartTime: startTime,
+            EndDate: eventData.endDate || eventData.date,
+            EndTime: endTime,
+            Location: eventData.location.trim(),
+            Address: eventData.address ? eventData.address.trim() : '',
+            Pin_Code: eventData.zip ? eventData.zip.toString() : null, // Changed from ZipCode to Pin_Code
+            Price: 0,
+            MaxAttendees: 100
+        };
+
+        console.log('Sending update request with data:', requestBody);
+
+        const token = localStorage.getItem('token');
+        const response = await fetch(`http://localhost:3000/api/events/${eventId}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || 'Failed to update event');
+        }
+
+        if (data.success) {
+            toast.success('Event updated successfully');
+            navigate('/home', { 
+                state: { activeTab: 'created' }
+            });
+        } else {
+            throw new Error(data.message || 'Failed to update event');
+        }
     } catch (error) {
-      toast.error('Failed to update event');
+        console.error('Error updating event:', error);
+        toast.error(error.message || 'Failed to update event');
     } finally {
-      setShowConfirmDialog(false);
+        setShowConfirmDialog(false);
     }
-  };
+};
+
+  
+  
 
   const handleSaveCancel = () => {
     setShowConfirmDialog(false);
   };
 
-  // Helper function to format time for display
   const formatTimeForDisplay = (timeString) => {
     if (!timeString) return '';
     try {
@@ -103,21 +220,19 @@ const EditEvent = () => {
     }
   };
 
-  // Helper function to convert 12-hour format to 24-hour format
   const convertTo24Hour = (time12h) => {
     if (!time12h) return '';
     const [time, modifier] = time12h.split(' ');
     let [hours, minutes] = time.split(':');
+    hours = parseInt(hours);
     
-    if (hours === '12') {
-      hours = '00';
+    if (hours === 12) {
+      hours = modifier === 'PM' ? 12 : 0;
+    } else if (modifier === 'PM') {
+      hours += 12;
     }
     
-    if (modifier === 'PM') {
-      hours = parseInt(hours, 10) + 12;
-    }
-    
-    return `${hours}:${minutes}`;
+    return `${hours.toString().padStart(2, '0')}:${minutes}`;
   };
 
   const renderDateInput = (field, label, value, placeholder) => (
@@ -130,6 +245,7 @@ const EditEvent = () => {
             value={value || ''}
             onChange={(e) => handleInputChange(field, e.target.value)}
             className={styles['editable-input']}
+            placeholder={placeholder}
           />
         ) : (
           <div className={styles['input-text']}>{value || placeholder}</div>
@@ -161,6 +277,7 @@ const EditEvent = () => {
               }
             }}
             className={styles['editable-input']}
+            placeholder={placeholder}
           />
         ) : (
           <div className={styles['input-text']}>
@@ -189,6 +306,15 @@ const EditEvent = () => {
       </div>
     </div>
   );
+
+  if (loading) {
+    return (
+      <div className="admin-container">
+        <Navbar />
+        <div className="loading">Loading event details...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="admin-container">
@@ -246,7 +372,6 @@ const EditEvent = () => {
         <MessageDialog
           messageHeading="Save Changes?"
           messageResponse="Save"
-          messageResponse2="Cancel"
           onSave={handleSaveConfirm}
           onCancel={handleSaveCancel}
         />

@@ -196,21 +196,21 @@ export const updateEvent = async (req, res) => {
             });
         }
 
-        // Create eventData object with all fields including Pin_Code
         const eventData = {
             Title: req.body.Title,
             Description: req.body.Description,
             EventType: req.body.EventType,
+            CategoryID: req.body.CategoryID,
             StartDate: req.body.StartDate,
             StartTime: req.body.StartTime,
             EndDate: req.body.EndDate,
             EndTime: req.body.EndTime,
+            VenueID: req.body.VenueID,
             Location: req.body.Location,
             Address: req.body.Address,
-            Pin_Code: req.body.Pin_Code,  // Matches the database column name
             Price: req.body.Price,
             MaxAttendees: req.body.MaxAttendees,
-            CategoryID: req.body.CategoryID
+            TicketsAvailable: req.body.TicketsAvailable
         };
 
         // Validate event data

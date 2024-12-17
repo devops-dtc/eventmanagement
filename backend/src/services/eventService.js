@@ -120,16 +120,17 @@ export const updateEventDetails = async (eventId, eventData) => {
             Title, 
             Description, 
             EventType,
+            CategoryID,
             StartDate, 
             StartTime, 
             EndDate, 
             EndTime,
+            VenueID,  // Add this
             Location, 
             Address,
-            Pin_Code,  // Matches the database column name exactly
             Price = 0, 
             MaxAttendees = 100,
-            CategoryID
+            TicketsAvailable
         } = eventData;
 
         const query = `
@@ -138,16 +139,17 @@ export const updateEventDetails = async (eventId, eventData) => {
                 Title = ?,
                 Description = ?,
                 EventType = ?,
+                CategoryID = ?,
                 StartDate = ?,
                 StartTime = ?,
                 EndDate = ?,
                 EndTime = ?,
+                VenueID = ?,
                 Location = ?,
                 Address = ?,
-                Pin_Code = ?,
                 Price = ?,
                 MaxAttendees = ?,
-                CategoryID = ?,
+                TicketsAvailable = ?,
                 UpdatedAt = CURRENT_TIMESTAMP
             WHERE EventID = ?
         `;
@@ -156,16 +158,17 @@ export const updateEventDetails = async (eventId, eventData) => {
             Title || null,
             Description || null,
             EventType || 'Physical',
+            CategoryID || null,
             StartDate || null,
             StartTime || null,
             EndDate || StartDate || null,
             EndTime || StartTime || null,
+            VenueID || null,
             Location || null,
             Address || null,
-            Pin_Code || null,
             Price || 0,
             MaxAttendees || 100,
-            CategoryID || null,
+            TicketsAvailable || MaxAttendees,
             eventId
         ];
 
@@ -175,11 +178,18 @@ export const updateEventDetails = async (eventId, eventData) => {
             throw new Error('Event not found or no changes made');
         }
 
-        // Fetch and return the updated event
-        const [updatedEvent] = await pool.execute(
-            'SELECT * FROM EVENT WHERE EventID = ?',
-            [eventId]
-        );
+        // Fetch and return the updated event with venue details
+        const [updatedEvent] = await pool.execute(`
+            SELECT 
+                e.*,
+                v.Name as VenueName,
+                v.Location as VenueLocation,
+                v.Address as VenueAddress,
+                v.Pin_Code as VenuePinCode
+            FROM EVENT e
+            LEFT JOIN VENUE v ON e.VenueID = v.VenueID
+            WHERE e.EventID = ?
+        `, [eventId]);
 
         return updatedEvent[0];
     } catch (error) {
