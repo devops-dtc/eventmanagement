@@ -33,33 +33,25 @@ export const validateUser = (userData) => {
 
 export const validateEvent = (eventData) => {
     const errors = {};
-
+    
     if (!eventData.Title) {
-        errors.Title = 'Title is required';
-    } else if (eventData.Title.length < 3) {
-        errors.Title = 'Title must be at least 3 characters long';
+        errors.title = 'Title is required';
+    } else if (!validator.isLength(eventData.Title, { min: 3 })) {
+        errors.title = 'Title must be at least 3 characters long';
     }
 
     if (!eventData.Description) {
-        errors.Description = 'Description is required';
-    } else if (eventData.Description.length < 10) {
-        errors.Description = 'Description must be at least 10 characters long';
+        errors.description = 'Description is required';
+    } else if (!validator.isLength(eventData.Description, { min: 10 })) {
+        errors.description = 'Description must be at least 10 characters long';
     }
 
     if (!eventData.StartDate) {
-        errors.StartDate = 'Start date is required';
+        errors.startDate = 'Start date is required';
     }
 
-    if (!eventData.StartTime) {
-        errors.StartTime = 'Start time is required';
-    }
-
-    if (!eventData.Location) {
-        errors.Location = 'Location is required';
-    }
-
-    if (eventData.EndDate && new Date(eventData.EndDate) < new Date(eventData.StartDate)) {
-        errors.EndDate = 'End date cannot be before start date';
+    if (eventData.Pin_Code && !validator.isLength(eventData.Pin_Code, { min: 4, max: 10 })) {
+        errors.pinCode = 'Invalid PIN code format';
     }
 
     return {
@@ -67,3 +59,4 @@ export const validateEvent = (eventData) => {
         errors
     };
 };
+

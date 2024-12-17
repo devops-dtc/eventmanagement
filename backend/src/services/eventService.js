@@ -59,10 +59,6 @@ export const createNewEvent = async (eventData) => {
         throw new Error(`Failed to create event: ${error.message}`);
     }
 };
-
-// ... [rest of your service functions remain the same]
-
-
 export const findAllEvents = async (options = {}) => {
     try {
         const page = parseInt(options.page) || 1;
@@ -119,29 +115,80 @@ export const findEventById = async (eventId) => {
 };
 
 export const updateEventDetails = async (eventId, eventData) => {
-    const {
-        Title, Description, EventType, CategoryID,
-        StartDate, StartTime, EndDate, EndTime,
-        Location, Address, Price, MaxAttendees
-    } = eventData;
+    try {
+        const {
+            Title, 
+            Description, 
+            EventType,
+            StartDate, 
+            StartTime, 
+            EndDate, 
+            EndTime,
+            Location, 
+            Address,
+            Pin_Code,  // Matches the database column name exactly
+            Price = 0, 
+            MaxAttendees = 100,
+            CategoryID
+        } = eventData;
 
-    await pool.execute(
-        `UPDATE EVENT
-         SET Title = ?, Description = ?, EventType = ?, CategoryID = ?,
-             StartDate = ?, StartTime = ?, EndDate = ?, EndTime = ?,
-             Location = ?, Address = ?, Price = ?, MaxAttendees = ?,
-             TicketsAvailable = MaxAttendees, UpdatedAt = CURRENT_TIMESTAMP
-         WHERE EventID = ?`,
-        [
-            Title, Description, EventType, CategoryID,
-            StartDate, StartTime, EndDate, EndTime,
-            Location, Address, Price, MaxAttendees,
+        const query = `
+            UPDATE EVENT
+            SET 
+                Title = ?,
+                Description = ?,
+                EventType = ?,
+                StartDate = ?,
+                StartTime = ?,
+                EndDate = ?,
+                EndTime = ?,
+                Location = ?,
+                Address = ?,
+                Pin_Code = ?,
+                Price = ?,
+                MaxAttendees = ?,
+                CategoryID = ?,
+                UpdatedAt = CURRENT_TIMESTAMP
+            WHERE EventID = ?
+        `;
+
+        const params = [
+            Title || null,
+            Description || null,
+            EventType || 'Physical',
+            StartDate || null,
+            StartTime || null,
+            EndDate || StartDate || null,
+            EndTime || StartTime || null,
+            Location || null,
+            Address || null,
+            Pin_Code || null,
+            Price || 0,
+            MaxAttendees || 100,
+            CategoryID || null,
             eventId
-        ]
-    );
+        ];
 
-    return findEventById(eventId);
+        const [result] = await pool.execute(query, params);
+
+        if (result.affectedRows === 0) {
+            throw new Error('Event not found or no changes made');
+        }
+
+        // Fetch and return the updated event
+        const [updatedEvent] = await pool.execute(
+            'SELECT * FROM EVENT WHERE EventID = ?',
+            [eventId]
+        );
+
+        return updatedEvent[0];
+    } catch (error) {
+        console.error('Error in updateEventDetails:', error);
+        throw new Error(`Failed to update event: ${error.message}`);
+    }
 };
+
+
 
 export const removeEvent = async (eventId) => {
     await pool.execute(

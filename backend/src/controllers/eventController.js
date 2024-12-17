@@ -53,9 +53,6 @@ export const createEvent = async (req, res) => {
     }
 };
 
-// ... [rest of your controller functions remain the same]
-
-
 export const getAllEvents = async (req, res) => {
     try {
         const { page, limit } = req.query;
@@ -182,25 +179,68 @@ export const updateEvent = async (req, res) => {
         const userId = req.user.UserID;
         const userType = req.user.UserType;
 
+        // First check if event exists
         const event = await findEventById(eventId);
         if (!event) {
-            return res.status(404).json({ message: 'Event not found' });
+            return res.status(404).json({ 
+                success: false,
+                message: 'Event not found' 
+            });
         }
 
+        // Check authorization
         if (userType !== 'Admin' && event.CreatedBy !== userId) {
-            return res.status(403).json({ message: 'Not authorized to update this event' });
+            return res.status(403).json({ 
+                success: false,
+                message: 'Not authorized to update this event' 
+            });
         }
 
-        const updatedEvent = await updateEventDetails(eventId, req.body);
+        // Create eventData object with all fields including Pin_Code
+        const eventData = {
+            Title: req.body.Title,
+            Description: req.body.Description,
+            EventType: req.body.EventType,
+            StartDate: req.body.StartDate,
+            StartTime: req.body.StartTime,
+            EndDate: req.body.EndDate,
+            EndTime: req.body.EndTime,
+            Location: req.body.Location,
+            Address: req.body.Address,
+            Pin_Code: req.body.Pin_Code,  // Matches the database column name
+            Price: req.body.Price,
+            MaxAttendees: req.body.MaxAttendees,
+            CategoryID: req.body.CategoryID
+        };
+
+        // Validate event data
+        const { isValid, errors } = validateEvent(eventData);
+        if (!isValid) {
+            return res.status(400).json({ 
+                success: false,
+                message: 'Validation failed',
+                errors 
+            });
+        }
+
+        // Update the event
+        const updatedEvent = await updateEventDetails(eventId, eventData);
+        
         res.json({
+            success: true,
             message: 'Event updated successfully',
             event: updatedEvent
         });
     } catch (error) {
         console.error('Error updating event:', error);
-        res.status(500).json({ message: 'Failed to update event' });
+        res.status(500).json({ 
+            success: false,
+            message: 'Failed to update event',
+            error: error.message 
+        });
     }
 };
+
 
 export const deleteEvent = async (req, res) => {
     try {
