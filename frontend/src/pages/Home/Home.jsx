@@ -87,9 +87,12 @@ const HomePage = () => {
             ...event,
             StartDate: new Date(event.StartDate).toLocaleDateString(),
             StartTime: event.StartTime ? event.StartTime.slice(0, 5) : '',
-            AttendeeCount: parseInt(event.CurrentAttendees || event.AttendeeCount) || 0,
-            MaxAttendees: parseInt(event.MaxAttendees) || 0
+            AttendeeCount: event.MaxAttendees - event.TicketsAvailable || 0,
+            MaxAttendees: parseInt(event.MaxAttendees) || 0,
+            Image: event.Image || `https://picsum.photos/seed/${event.EventID}/800/400`
           }));
+          
+          
 
           setEvents(prev => ({
             ...prev,
@@ -142,7 +145,7 @@ const HomePage = () => {
             date: event.StartDate,
             time: event.StartTime,
             location: event.Location,
-            attendees: event.AttendeeCount || 0,
+            attendees: event.MaxAttendees - event.TicketsAvailable,
             maxAttendees: event.MaxAttendees,
             image: event.Image,
             price: event.Price || 0
@@ -155,6 +158,7 @@ const HomePage = () => {
       });
     }
   };
+  
 
 
   const handleEditEvent = async (event, e) => {
@@ -213,9 +217,9 @@ const HomePage = () => {
             ...event,
             StartDate: new Date(event.StartDate).toLocaleDateString(),
             StartTime: event.StartTime ? event.StartTime.slice(0, 5) : '',
-            AttendeeCount: parseInt(event.CurrentAttendees || event.AttendeeCount) || 0,
+            AttendeeCount: event.MaxAttendees - event.TicketsAvailable || 0,
             MaxAttendees: parseInt(event.MaxAttendees) || 0
-          }));
+          }));          
 
           setEvents(prev => ({
             ...prev,
@@ -333,11 +337,11 @@ const HomePage = () => {
               events[activeTab]?.map((event) => (
                 <div key={event.EventID} className="event-card">
                   <img 
-                    src={event.Image || 'https://via.placeholder.com/400x300'} 
+                    src={event.Image || `https://picsum.photos/seed/${event.EventID}/800/400`}
                     alt={event.Title} 
                     className="event-image"
                     onError={(e) => {
-                      e.target.src = 'https://via.placeholder.com/400x300';
+                      e.target.src = `https://picsum.photos/seed/${event.EventID}/800/400`;
                     }}
                   />
                   <div className="event-content">
@@ -352,8 +356,9 @@ const HomePage = () => {
                             <span style={{marginLeft: '15px'}}>⏰ {event.StartTime}</span>
                           </div>
                           <div className="enrollment-count">
-                            <span>👥 {event.AttendeeCount || 0}/{event.MaxAttendees} enrolled</span>
+                            <span>👥 {event.MaxAttendees - event.TicketsAvailable}/{event.MaxAttendees} enrolled</span>
                           </div>
+
                         </div>
                       </div>
                       {renderEventButton(event)}
