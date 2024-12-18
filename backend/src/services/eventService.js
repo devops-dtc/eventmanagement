@@ -25,7 +25,7 @@ export const createNewEvent = async (eventData) => {
                 Title, Description, EventType,
                 StartDate, StartTime, EndDate, EndTime,
                 Location, Address, Price, MaxAttendees,
-                TicketsAvailable, CreatedBy, Published,
+                AttendeeCount, CreatedBy, Published,
                 EventIsDeleted, EventIsApproved
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
@@ -40,7 +40,7 @@ export const createNewEvent = async (eventData) => {
                 Address,
                 Price,
                 MaxAttendees,
-                MaxAttendees, // TicketsAvailable starts equal to MaxAttendees
+                MaxAttendees, 
                 CreatedBy,
                 Published,
                 EventIsDeleted,
@@ -178,7 +178,7 @@ export const updateEventDetails = async (eventId, eventData) => {
                 Image = ?,
                 Price = ?,
                 MaxAttendees = ?,
-                TicketsAvailable = ?,
+                AttendeeCount = ?,
                 UpdatedAt = CURRENT_TIMESTAMP
             WHERE EventID = ?
         `;
@@ -195,8 +195,8 @@ export const updateEventDetails = async (eventId, eventData) => {
             eventData.Address,
             imageBuffer, // Use the prepared image buffer
             eventData.Price || 0,
-            eventData.MaxAttendees || 100,
-            eventData.TicketsAvailable || eventData.MaxAttendees || 100,
+            eventData.MaxAttendees || Nan,
+            eventData.AttendeeCount || Nan,
             eventId
         ];
 

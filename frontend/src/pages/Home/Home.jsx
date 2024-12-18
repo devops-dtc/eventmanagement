@@ -101,7 +101,7 @@ const HomePage = () => {
             EndTime: event.EndTime ? event.EndTime.slice(0, 5) : '',
             Image: `https://picsum.photos/seed/${event.EventID}/800/400`,
             MaxAttendees: parseInt(event.MaxAttendees) || 0,
-            TicketsAvailable: parseInt(event.TicketsAvailable) || 0,
+            AttendeeCount: parseInt(event.AttendeeCount) || 0,
             CurrentAttendees: parseInt(event.CurrentAttendees) || 0
           }));
           
@@ -164,7 +164,7 @@ const HomePage = () => {
             date: event.StartDate,
             time: event.StartTime,
             location: event.Location,
-            attendees: event.MaxAttendees - event.TicketsAvailable,
+            attendees: event.AttendeeCount,
             maxAttendees: event.MaxAttendees,
             image: getValidImageUrl(event.Image, event.EventID),
             price: event.Price || 0
@@ -228,7 +228,7 @@ const HomePage = () => {
             EndTime: event.EndTime ? event.EndTime.slice(0, 5) : '',
             Image: getValidImageUrl(event.Image, event.EventID),
             MaxAttendees: parseInt(event.MaxAttendees) || 0,
-            TicketsAvailable: parseInt(event.TicketsAvailable) || 0,
+            AttendeeCount: parseInt(event.AttendeeCount) || 0,
             CurrentAttendees: parseInt(event.CurrentAttendees) || 0
           }));
 
@@ -367,7 +367,7 @@ const HomePage = () => {
                             <span style={{marginLeft: '15px'}}>⏰ {event.StartTime}</span>
                           </div>
                           <div className="enrollment-count">
-                            <span>👥 {event.MaxAttendees - event.TicketsAvailable}/{event.MaxAttendees} enrolled</span>
+                            <span>👥 {event.AttendeeCount}/{event.MaxAttendees} enrolled</span>
                           </div>
                         </div>
                       </div>
