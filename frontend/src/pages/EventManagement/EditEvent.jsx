@@ -30,8 +30,6 @@ const EditEvent = () => {
     image: ''
   });
 
-  
-
   useEffect(() => {
     const fetchEventDetails = async () => {
       if (!eventId) {
@@ -42,6 +40,8 @@ const EditEvent = () => {
 
       try {
         const token = localStorage.getItem('token');
+        console.log('Fetching event details for ID:', eventId);
+        
         const response = await fetch(`http://localhost:3000/api/events/${eventId}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -49,22 +49,25 @@ const EditEvent = () => {
           }
         });
 
+        const data = await response.json();
+        console.log('Received event data:', data);
+
         if (!response.ok) {
-          throw new Error('Failed to fetch event details');
+          throw new Error(data.message || 'Failed to fetch event details');
         }
 
-        const data = await response.json();
-        if (data.success) {
+        if (data.success && data.event) {
           setEventData({
-            title: data.event.Title,
+            title: data.event.Title || '',
             date: new Date(data.event.StartDate).toISOString().split('T')[0],
-            time: data.event.StartTime,
+            time: data.event.StartTime || '',
             endDate: data.event.EndDate ? new Date(data.event.EndDate).toISOString().split('T')[0] : '',
             endTime: data.event.EndTime || '',
-            location: data.event.Location,
-            zip: data.event.ZipCode || '',
-            address: data.event.Address,
-            description: data.event.Description
+            location: data.event.Location || '',
+            zip: data.event.Pin_Code || '',
+            address: data.event.Address || '',
+            description: data.event.Description || '',
+            image: data.event.Image || ''
           });
         }
       } catch (error) {
@@ -90,22 +93,6 @@ const EditEvent = () => {
     return <Navigate to="/home" />;
   }
 
-  const convertTimeToMySQLFormat = (timeString) => {
-    if (!timeString) return null;
-    try {
-      const [timePart, period] = timeString.split(' ');
-      let [hours, minutes] = timePart.split(':').map(num => parseInt(num, 10));
-
-      if (period === 'PM' && hours !== 12) hours += 12;
-      if (period === 'AM' && hours === 12) hours = 0;
-
-      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
-    } catch (error) {
-      console.error('Time conversion error:', error);
-      return null;
-    }
-  };
-
   const handleInputChange = (field, value) => {
     setEventData(prev => ({
       ...prev,
@@ -123,120 +110,80 @@ const EditEvent = () => {
 
   const handleSaveConfirm = async () => {
     try {
-        // Validate required fields first
-        if (!eventData.title || !eventData.date || !eventData.location) {
-            toast.error('Please fill in all required fields');
-            return;
-        }
+      const token = localStorage.getItem('token');
+      const requestBody = {
+        EventID: parseInt(eventId),
+        Title: eventData.title.trim(),
+        Description: eventData.description.trim(),
+        EventType: 'Physical',
+        StartDate: eventData.date,
+        StartTime: eventData.time,
+        EndDate: eventData.endDate || eventData.date,
+        EndTime: eventData.endTime || eventData.time,
+        Location: eventData.location.trim(),
+        Address: eventData.address.trim(),
+        Pin_Code: eventData.zip ? eventData.zip.toString() : null,
+        Image: eventData.image || null,
+        Price: 0,
+        MaxAttendees: 100
+      };
 
-        // Convert times to MySQL format
-        const startTime = eventData.time ? convertTimeToMySQLFormat(eventData.time) : null;
-        if (!startTime) {
-            toast.error('Invalid start time format');
-            return;
-        }
+      console.log('Sending update request:', requestBody);
 
-        // Handle end time - if not provided, use start time
-        const endTime = eventData.endTime ? 
-            convertTimeToMySQLFormat(eventData.endTime) : 
-            startTime;
+      const response = await fetch(`http://localhost:3000/api/events/${eventId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      });
 
-        // Validate dates if end date is provided
-        if (eventData.endDate) {
-            const startDate = new Date(eventData.date);
-            const endDate = new Date(eventData.endDate);
-            
-            if (endDate < startDate) {
-                toast.error('End date cannot be before start date');
-                return;
-            }
-        }
+      const data = await response.json();
+      console.log('Update response:', data);
 
-        // Prepare request body with all required fields and proper data types
-        const requestBody = {
-            EventID: parseInt(eventId),
-            Title: eventData.title.trim(),
-            Description: eventData.description ? eventData.description.trim() : '',
-            EventType: 'Physical',
-            StartDate: eventData.date,
-            StartTime: startTime,
-            EndDate: eventData.endDate || eventData.date,
-            EndTime: endTime,
-            Location: eventData.location.trim(),
-            Address: eventData.address ? eventData.address.trim() : '',
-            Pin_Code: eventData.zip ? eventData.zip.toString() : null, // Changed from ZipCode to Pin_Code
-            Price: 0,
-            MaxAttendees: 100
-        };
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to update event');
+      }
 
-        console.log('Sending update request with data:', requestBody);
-
-        const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:3000/api/events/${eventId}`, {
-            method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(requestBody)
+      if (data.success) {
+        toast.success('Event updated successfully');
+        navigate('/home', { 
+          state: { activeTab: 'created' }
         });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.message || 'Failed to update event');
-        }
-
-        if (data.success) {
-            toast.success('Event updated successfully');
-            navigate('/home', { 
-                state: { activeTab: 'created' }
-            });
-        } else {
-            throw new Error(data.message || 'Failed to update event');
-        }
+      } else {
+        throw new Error(data.message || 'Failed to update event');
+      }
     } catch (error) {
-        console.error('Error updating event:', error);
-        toast.error(error.message || 'Failed to update event');
+      console.error('Error updating event:', error);
+      toast.error(error.message || 'Failed to update event');
     } finally {
-        setShowConfirmDialog(false);
+      setShowConfirmDialog(false);
     }
-};
-
-  
-  
+  };
 
   const handleSaveCancel = () => {
     setShowConfirmDialog(false);
   };
 
-  const formatTimeForDisplay = (timeString) => {
-    if (!timeString) return '';
-    try {
-      const [hours, minutes] = timeString.split(':');
-      const hour = parseInt(hours);
-      const ampm = hour >= 12 ? 'PM' : 'AM';
-      const hour12 = hour % 12 || 12;
-      return `${hour12}:${minutes} ${ampm}`;
-    } catch {
-      return timeString;
-    }
-  };
-
-  const convertTo24Hour = (time12h) => {
-    if (!time12h) return '';
-    const [time, modifier] = time12h.split(' ');
-    let [hours, minutes] = time.split(':');
-    hours = parseInt(hours);
-    
-    if (hours === 12) {
-      hours = modifier === 'PM' ? 12 : 0;
-    } else if (modifier === 'PM') {
-      hours += 12;
-    }
-    
-    return `${hours.toString().padStart(2, '0')}:${minutes}`;
-  };
+  const renderInput = (field, label, value, placeholder, type = 'text') => (
+    <div className={styles['form-group']}>
+      <label className={styles['form-label']}>{label}</label>
+      <div className={styles['input-box']}>
+        {isEditing ? (
+          <input
+            type={type}
+            value={value || ''}
+            placeholder={placeholder}
+            onChange={(e) => handleInputChange(field, e.target.value)}
+            className={styles['editable-input']}
+          />
+        ) : (
+          <div className={styles['input-text']}>{value || placeholder}</div>
+        )}
+      </div>
+    </div>
+  );
 
   const renderDateInput = (field, label, value, placeholder) => (
     <div className={styles['form-group']}>
@@ -264,44 +211,10 @@ const EditEvent = () => {
         {isEditing ? (
           <input
             type="time"
-            value={convertTo24Hour(value) || ''}
-            onChange={(e) => {
-              const time24 = e.target.value;
-              if (time24) {
-                const date = new Date(`2000-01-01T${time24}`);
-                const timeString = date.toLocaleTimeString('en-US', {
-                  hour: 'numeric',
-                  minute: '2-digit',
-                  hour12: true
-                });
-                handleInputChange(field, timeString);
-              } else {
-                handleInputChange(field, '');
-              }
-            }}
-            className={styles['editable-input']}
-            placeholder={placeholder}
-          />
-        ) : (
-          <div className={styles['input-text']}>
-            {formatTimeForDisplay(value) || placeholder}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
-  const renderInput = (field, label, value, placeholder, type = 'text') => (
-    <div className={styles['form-group']}>
-      <label className={styles['form-label']}>{label}</label>
-      <div className={styles['input-box']}>
-        {isEditing ? (
-          <input
-            type={type}
             value={value || ''}
-            placeholder={placeholder}
             onChange={(e) => handleInputChange(field, e.target.value)}
             className={styles['editable-input']}
+            placeholder={placeholder}
           />
         ) : (
           <div className={styles['input-text']}>{value || placeholder}</div>
@@ -337,25 +250,49 @@ const EditEvent = () => {
 
             <div className={styles['venue-details-section']}>
               {renderInput('location', 'Venue Name', eventData.location, 'Enter venue name')}
-              {renderInput('zip', 'Venue Zip', eventData.zip, 'Enter zip code', 'number')}
+              {renderInput('zip', 'Venue Pin Code', eventData.zip, 'Enter pin code', 'number')}
               {renderInput('address', 'Venue Address', eventData.address, 'Enter full address')}
             </div>
 
-            <div className={styles['form-group']}>
-              <label className={styles['form-label']}>Description</label>
-              <div className={`${styles['input-box']} ${styles['description']}`}>
-                {isEditing ? (
-                  <textarea
-                    value={eventData.description || ''}
-                    placeholder="Enter event description"
-                    onChange={(e) => handleInputChange('description', e.target.value)}
-                    className={styles['editable-input']}
-                  />
-                ) : (
-                  <div className={styles['input-text']}>
-                    {eventData.description || 'Enter event description'}
+            <div className={styles['form-content']}>
+              <div className={styles['description-box']}>
+                <div className={styles['form-group']}>
+                  <label className={styles['form-label']}>Description</label>
+                  <div className={`${styles['input-box']} ${styles['description']}`}>
+                    {isEditing ? (
+                      <textarea
+                        value={eventData.description || ''}
+                        onChange={(e) => handleInputChange('description', e.target.value)}
+                        className={styles['editable-input']}
+                        placeholder="Enter event description"
+                      />
+                    ) : (
+                      <div className={styles['input-text']}>
+                        {eventData.description || 'No description provided'}
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
+              </div>
+              <div className={styles['description-box']}>
+                <div className={styles['form-group']}>
+                  <label className={styles['form-label']}>Event Image URL</label>
+                  <div className={styles['input-box']}>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={eventData.image || ''}
+                        onChange={(e) => handleInputChange('image', e.target.value)}
+                        className={styles['editable-input']}
+                        placeholder="Enter image URL (e.g., https://example.com/image.jpg)"
+                      />
+                    ) : (
+                      <div className={styles['input-text']}>
+                        {eventData.image || 'No image URL provided'}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

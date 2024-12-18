@@ -161,26 +161,23 @@ const HomePage = () => {
   
 
 
-  const handleEditEvent = async (event, e) => {
+  // Update only the handleEditEvent function in HomePage.jsx
+  const handleEditEvent = (event, e) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    console.log('Editing event:', event);
+    console.log('Event ID:', event.EventID);
+  
     navigate('/edit-event', {
       state: {
-        eventId: event.EventID,
-        eventDetails: {
-          title: event.Title,
-          description: event.Description,
-          date: event.StartDate,
-          time: event.StartTime,
-          endDate: event.EndDate,
-          endTime: event.EndTime,
-          location: event.Location,
-          address: event.Address,
-          zip: event.ZipCode
-        }
+        eventId: event.EventID
       }
     });
   };
+  
+  
+
 
 
   const handleRemoveEnrollment = async (enrollmentId) => {
@@ -213,13 +210,26 @@ const HomePage = () => {
 
         const upcomingData = await upcomingResponse.json();
         if (upcomingData.success) {
-          const formattedEvents = upcomingData.events.map(event => ({
+          // Update the formatting in the fetchEvents function inside useEffect
+          const formattedEvents = data.events.map(event => ({
             ...event,
+            EventID: event.EventID,
+            Title: event.Title,
+            Description: event.Description,
             StartDate: new Date(event.StartDate).toLocaleDateString(),
             StartTime: event.StartTime ? event.StartTime.slice(0, 5) : '',
+            EndDate: event.EndDate,
+            EndTime: event.EndTime,
+            Location: event.Location,
+            Address: event.Address,
+            Pin_Code: event.Pin_Code || event.ZipCode,
             AttendeeCount: event.MaxAttendees - event.TicketsAvailable || 0,
-            MaxAttendees: parseInt(event.MaxAttendees) || 0
-          }));          
+            MaxAttendees: parseInt(event.MaxAttendees) || 0,
+            Image: event.ImageUrl || event.Image || `https://picsum.photos/seed/${event.EventID}/800/400`,
+            TicketsAvailable: event.TicketsAvailable
+          }));
+          
+         
 
           setEvents(prev => ({
             ...prev,
@@ -336,14 +346,16 @@ const HomePage = () => {
             ) : (
               events[activeTab]?.map((event) => (
                 <div key={event.EventID} className="event-card">
-                  <img 
-                    src={event.Image || `https://picsum.photos/seed/${event.EventID}/800/400`}
-                    alt={event.Title} 
-                    className="event-image"
-                    onError={(e) => {
-                      e.target.src = `https://picsum.photos/seed/${event.EventID}/800/400`;
-                    }}
-                  />
+                  {/* Update the image source in the event card rendering */}
+                    <img 
+                      src={event.Image || event.ImageUrl || `https://picsum.photos/seed/${event.EventID}/800/400`}
+                      alt={event.Title} 
+                      className="event-image"
+                      onError={(e) => {
+                        e.target.src = `https://picsum.photos/seed/${event.EventID}/800/400`;
+                      }}
+                    />
+
                   <div className="event-content">
                     <h2 className="event-title">{event.Title}</h2>
                     <p className="event-description">{event.Description}</p>

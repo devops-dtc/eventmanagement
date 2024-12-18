@@ -151,6 +151,8 @@ export const getPastEvents = async (req, res) => {
 export const getEventById = async (req, res) => {
     try {
         const { id } = req.params;
+        console.log('Fetching event ID:', id);
+
         const event = await findEventById(id);
         
         if (!event) {
@@ -160,6 +162,9 @@ export const getEventById = async (req, res) => {
             });
         }
 
+        // Log the event being sent
+        console.log('Sending event:', event);
+
         res.json({
             success: true,
             event
@@ -168,16 +173,20 @@ export const getEventById = async (req, res) => {
         console.error('Error fetching event by ID:', error);
         res.status(500).json({
             success: false,
-            message: 'Failed to fetch event'
+            message: 'Failed to fetch event',
+            error: error.message
         });
     }
 };
+
 
 export const updateEvent = async (req, res) => {
     try {
         const eventId = req.params.id;
         const userId = req.user.UserID;
         const userType = req.user.UserType;
+
+        console.log('Update request for event:', eventId);
 
         // First check if event exists
         const event = await findEventById(eventId);
@@ -199,31 +208,19 @@ export const updateEvent = async (req, res) => {
         const eventData = {
             Title: req.body.Title,
             Description: req.body.Description,
-            EventType: req.body.EventType,
-            CategoryID: req.body.CategoryID,
+            EventType: req.body.EventType || 'Physical',
             StartDate: req.body.StartDate,
             StartTime: req.body.StartTime,
-            EndDate: req.body.EndDate,
-            EndTime: req.body.EndTime,
-            VenueID: req.body.VenueID,
+            EndDate: req.body.EndDate || req.body.StartDate,
+            EndTime: req.body.EndTime || req.body.StartTime,
             Location: req.body.Location,
             Address: req.body.Address,
-            Price: req.body.Price,
-            MaxAttendees: req.body.MaxAttendees,
-            TicketsAvailable: req.body.TicketsAvailable
+            Image: req.body.Image,
+            Price: req.body.Price || 0,
+            MaxAttendees: req.body.MaxAttendees || 100,
+            TicketsAvailable: req.body.TicketsAvailable || req.body.MaxAttendees || 100
         };
 
-        // Validate event data
-        const { isValid, errors } = validateEvent(eventData);
-        if (!isValid) {
-            return res.status(400).json({ 
-                success: false,
-                message: 'Validation failed',
-                errors 
-            });
-        }
-
-        // Update the event
         const updatedEvent = await updateEventDetails(eventId, eventData);
         
         res.json({
@@ -240,6 +237,11 @@ export const updateEvent = async (req, res) => {
         });
     }
 };
+
+
+
+
+
 
 
 export const deleteEvent = async (req, res) => {

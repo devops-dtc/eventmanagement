@@ -92,61 +92,69 @@ export const findAllEvents = async (options = {}) => {
     }
 };
 
+// In eventService.js
 export const findEventById = async (eventId) => {
     try {
         const [rows] = await pool.query(
             `SELECT 
                 e.*,
-                u.UserFullname as OrganizerName,
-                ec.CategoryName
+                u.UserFullname as OrganizerName
             FROM EVENT e
             LEFT JOIN USER u ON e.CreatedBy = u.UserID
-            LEFT JOIN EVENT_CATEGORY ec ON e.CategoryID = ec.CategoryID
-            WHERE e.EventID = ? 
-            AND e.EventIsDeleted = FALSE
-            AND e.Published = TRUE`,
+            WHERE e.EventID = ?`,
             [eventId]
         );
-        return rows[0];
+        
+        if (!rows[0]) {
+            return null;
+        }
+
+        const event = rows[0];
+        
+        // Convert LONGBLOB Image to string if it exists
+        if (event.Image) {
+            if (Buffer.isBuffer(event.Image)) {
+                event.Image = event.Image.toString('utf8');
+            } else if (typeof event.Image === 'object') {
+                event.Image = Buffer.from(event.Image).toString('utf8');
+            }
+        }
+        
+        // Format dates
+        if (event.StartDate) {
+            event.StartDate = new Date(event.StartDate);
+        }
+        if (event.EndDate) {
+            event.EndDate = new Date(event.EndDate);
+        }
+
+        return event;
     } catch (error) {
         console.error('Error in findEventById:', error);
-        throw error;
+        throw new Error(`Failed to fetch event: ${error.message}`);
     }
 };
 
+
+
+
+
+
 export const updateEventDetails = async (eventId, eventData) => {
     try {
-        const {
-            Title, 
-            Description, 
-            EventType,
-            CategoryID,
-            StartDate, 
-            StartTime, 
-            EndDate, 
-            EndTime,
-            VenueID,  // Add this
-            Location, 
-            Address,
-            Price = 0, 
-            MaxAttendees = 100,
-            TicketsAvailable
-        } = eventData;
-
         const query = `
             UPDATE EVENT
             SET 
                 Title = ?,
                 Description = ?,
                 EventType = ?,
-                CategoryID = ?,
                 StartDate = ?,
                 StartTime = ?,
                 EndDate = ?,
                 EndTime = ?,
-                VenueID = ?,
                 Location = ?,
                 Address = ?,
+                Image = ?,
                 Price = ?,
                 MaxAttendees = ?,
                 TicketsAvailable = ?,
@@ -154,23 +162,28 @@ export const updateEventDetails = async (eventId, eventData) => {
             WHERE EventID = ?
         `;
 
+        // Remove ZipCode/Pin_Code as it's not in the EVENT table
         const params = [
-            Title || null,
-            Description || null,
-            EventType || 'Physical',
-            CategoryID || null,
-            StartDate || null,
-            StartTime || null,
-            EndDate || StartDate || null,
-            EndTime || StartTime || null,
-            VenueID || null,
-            Location || null,
-            Address || null,
-            Price || 0,
-            MaxAttendees || 100,
-            TicketsAvailable || MaxAttendees,
+            eventData.Title,
+            eventData.Description,
+            eventData.EventType,
+            eventData.StartDate,
+            eventData.StartTime,
+            eventData.EndDate,
+            eventData.EndTime,
+            eventData.Location,
+            eventData.Address,
+            eventData.Image ? Buffer.from(eventData.Image) : null, // Convert Image to Buffer
+            eventData.Price || 0,
+            eventData.MaxAttendees || 100,
+            eventData.TicketsAvailable || eventData.MaxAttendees || 100,
             eventId
         ];
+
+        console.log('Update Query Params:', {
+            ...params,
+            Image: eventData.Image ? 'Buffer data present' : null
+        });
 
         const [result] = await pool.execute(query, params);
 
@@ -178,25 +191,17 @@ export const updateEventDetails = async (eventId, eventData) => {
             throw new Error('Event not found or no changes made');
         }
 
-        // Fetch and return the updated event with venue details
-        const [updatedEvent] = await pool.execute(`
-            SELECT 
-                e.*,
-                v.Name as VenueName,
-                v.Location as VenueLocation,
-                v.Address as VenueAddress,
-                v.Pin_Code as VenuePinCode
-            FROM EVENT e
-            LEFT JOIN VENUE v ON e.VenueID = v.VenueID
-            WHERE e.EventID = ?
-        `, [eventId]);
-
-        return updatedEvent[0];
+        // Fetch and return the updated event
+        return findEventById(eventId);
     } catch (error) {
         console.error('Error in updateEventDetails:', error);
         throw new Error(`Failed to update event: ${error.message}`);
     }
 };
+
+
+
+
 
 
 
