@@ -111,13 +111,27 @@ export const findEventById = async (eventId) => {
 
         const event = rows[0];
         
-        // Convert LONGBLOB Image to string if it exists
+        // Handle Image field
         if (event.Image) {
             if (Buffer.isBuffer(event.Image)) {
-                event.Image = event.Image.toString('utf8');
-            } else if (typeof event.Image === 'object') {
-                event.Image = Buffer.from(event.Image).toString('utf8');
+                // Convert Buffer to string
+                const imageString = event.Image.toString('utf8');
+                // Check if it's a URL
+                if (imageString.startsWith('http')) {
+                    event.Image = imageString;
+                } else {
+                    // If not a URL, use placeholder
+                    event.Image = `https://picsum.photos/seed/${event.EventID}/800/400`;
+                }
+            } else if (typeof event.Image === 'string') {
+                // If already a string, use it directly if it's a URL
+                if (!event.Image.startsWith('http')) {
+                    event.Image = `https://picsum.photos/seed/${event.EventID}/800/400`;
+                }
             }
+        } else {
+            // If no image, use placeholder
+            event.Image = `https://picsum.photos/seed/${event.EventID}/800/400`;
         }
         
         // Format dates
@@ -140,8 +154,15 @@ export const findEventById = async (eventId) => {
 
 
 
+
 export const updateEventDetails = async (eventId, eventData) => {
     try {
+        // First, check if the image is a URL
+        let imageBuffer = null;
+        if (eventData.Image && typeof eventData.Image === 'string' && eventData.Image.startsWith('http')) {
+            imageBuffer = Buffer.from(eventData.Image);
+        }
+
         const query = `
             UPDATE EVENT
             SET 
@@ -162,7 +183,6 @@ export const updateEventDetails = async (eventId, eventData) => {
             WHERE EventID = ?
         `;
 
-        // Remove ZipCode/Pin_Code as it's not in the EVENT table
         const params = [
             eventData.Title,
             eventData.Description,
@@ -173,17 +193,12 @@ export const updateEventDetails = async (eventId, eventData) => {
             eventData.EndTime,
             eventData.Location,
             eventData.Address,
-            eventData.Image ? Buffer.from(eventData.Image) : null, // Convert Image to Buffer
+            imageBuffer, // Use the prepared image buffer
             eventData.Price || 0,
             eventData.MaxAttendees || 100,
             eventData.TicketsAvailable || eventData.MaxAttendees || 100,
             eventId
         ];
-
-        console.log('Update Query Params:', {
-            ...params,
-            Image: eventData.Image ? 'Buffer data present' : null
-        });
 
         const [result] = await pool.execute(query, params);
 
@@ -192,12 +207,18 @@ export const updateEventDetails = async (eventId, eventData) => {
         }
 
         // Fetch and return the updated event
-        return findEventById(eventId);
+        const updatedEvent = await findEventById(eventId);
+        if (!updatedEvent) {
+            throw new Error('Failed to fetch updated event');
+        }
+
+        return updatedEvent;
     } catch (error) {
         console.error('Error in updateEventDetails:', error);
         throw new Error(`Failed to update event: ${error.message}`);
     }
 };
+
 
 
 

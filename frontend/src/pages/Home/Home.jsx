@@ -24,6 +24,22 @@ const HomePage = () => {
   const isAdmin = user?.role === 'Admin';
   const canManageEvents = isOrganizer || isAdmin;
 
+  // Simple function to handle image URLs
+  const getValidImageUrl = (imageData, eventId) => {
+    if (!imageData) return `https://picsum.photos/seed/${eventId}/800/400`;
+    
+    if (typeof imageData === 'object') {
+      try {
+        const url = imageData.data ? imageData.data.toString() : null;
+        return url && url.startsWith('http') ? url : `https://picsum.photos/seed/${eventId}/800/400`;
+      } catch {
+        return `https://picsum.photos/seed/${eventId}/800/400`;
+      }
+    }
+    
+    return imageData.startsWith('http') ? imageData : `https://picsum.photos/seed/${eventId}/800/400`;
+  };
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
@@ -89,10 +105,8 @@ const HomePage = () => {
             StartTime: event.StartTime ? event.StartTime.slice(0, 5) : '',
             AttendeeCount: event.MaxAttendees - event.TicketsAvailable || 0,
             MaxAttendees: parseInt(event.MaxAttendees) || 0,
-            Image: event.Image || `https://picsum.photos/seed/${event.EventID}/800/400`
+            Image: getValidImageUrl(event.Image, event.EventID)
           }));
-          
-          
 
           setEvents(prev => ({
             ...prev,
@@ -134,7 +148,7 @@ const HomePage = () => {
     ];
   };
 
-  const handleNavigateToEvent = (event) => {
+    const handleNavigateToEvent = (event) => {
     if (isAuthenticated()) {
       navigate('/enrollment', { 
         state: { 
@@ -147,7 +161,7 @@ const HomePage = () => {
             location: event.Location,
             attendees: event.MaxAttendees - event.TicketsAvailable,
             maxAttendees: event.MaxAttendees,
-            image: event.Image,
+            image: getValidImageUrl(event.Image, event.EventID),
             price: event.Price || 0
           }
         }
@@ -158,10 +172,7 @@ const HomePage = () => {
       });
     }
   };
-  
 
-
-  // Update only the handleEditEvent function in HomePage.jsx
   const handleEditEvent = (event, e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -175,10 +186,6 @@ const HomePage = () => {
       }
     });
   };
-  
-  
-
-
 
   const handleRemoveEnrollment = async (enrollmentId) => {
     try {
@@ -210,26 +217,14 @@ const HomePage = () => {
 
         const upcomingData = await upcomingResponse.json();
         if (upcomingData.success) {
-          // Update the formatting in the fetchEvents function inside useEffect
-          const formattedEvents = data.events.map(event => ({
+          const formattedEvents = upcomingData.events.map(event => ({
             ...event,
-            EventID: event.EventID,
-            Title: event.Title,
-            Description: event.Description,
             StartDate: new Date(event.StartDate).toLocaleDateString(),
             StartTime: event.StartTime ? event.StartTime.slice(0, 5) : '',
-            EndDate: event.EndDate,
-            EndTime: event.EndTime,
-            Location: event.Location,
-            Address: event.Address,
-            Pin_Code: event.Pin_Code || event.ZipCode,
             AttendeeCount: event.MaxAttendees - event.TicketsAvailable || 0,
             MaxAttendees: parseInt(event.MaxAttendees) || 0,
-            Image: event.ImageUrl || event.Image || `https://picsum.photos/seed/${event.EventID}/800/400`,
-            TicketsAvailable: event.TicketsAvailable
+            Image: getValidImageUrl(event.Image, event.EventID)
           }));
-          
-         
 
           setEvents(prev => ({
             ...prev,
@@ -346,16 +341,14 @@ const HomePage = () => {
             ) : (
               events[activeTab]?.map((event) => (
                 <div key={event.EventID} className="event-card">
-                  {/* Update the image source in the event card rendering */}
-                    <img 
-                      src={event.Image || event.ImageUrl || `https://picsum.photos/seed/${event.EventID}/800/400`}
-                      alt={event.Title} 
-                      className="event-image"
-                      onError={(e) => {
-                        e.target.src = `https://picsum.photos/seed/${event.EventID}/800/400`;
-                      }}
-                    />
-
+                  <img 
+                    src={getValidImageUrl(event.Image, event.EventID)}
+                    alt={event.Title} 
+                    className="event-image"
+                    onError={(e) => {
+                      e.target.src = `https://picsum.photos/seed/${event.EventID}/800/400`;
+                    }}
+                  />
                   <div className="event-content">
                     <h2 className="event-title">{event.Title}</h2>
                     <p className="event-description">{event.Description}</p>
@@ -370,7 +363,6 @@ const HomePage = () => {
                           <div className="enrollment-count">
                             <span>👥 {event.MaxAttendees - event.TicketsAvailable}/{event.MaxAttendees} enrolled</span>
                           </div>
-
                         </div>
                       </div>
                       {renderEventButton(event)}

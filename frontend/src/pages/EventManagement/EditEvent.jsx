@@ -108,59 +108,64 @@ const EditEvent = () => {
     }
   };
 
-  const handleSaveConfirm = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const requestBody = {
-        EventID: parseInt(eventId),
-        Title: eventData.title.trim(),
-        Description: eventData.description.trim(),
-        EventType: 'Physical',
-        StartDate: eventData.date,
-        StartTime: eventData.time,
-        EndDate: eventData.endDate || eventData.date,
-        EndTime: eventData.endTime || eventData.time,
-        Location: eventData.location.trim(),
-        Address: eventData.address.trim(),
-        Pin_Code: eventData.zip ? eventData.zip.toString() : null,
-        Image: eventData.image || null,
-        Price: 0,
-        MaxAttendees: 100
-      };
+  // In your handleSaveConfirm function
+const handleSaveConfirm = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const requestBody = {
+      EventID: parseInt(eventId),
+      Title: eventData.title.trim(),
+      Description: eventData.description.trim(),
+      EventType: 'Physical',
+      StartDate: eventData.date,
+      StartTime: eventData.time,
+      EndDate: eventData.endDate || eventData.date,
+      EndTime: eventData.endTime || eventData.time,
+      Location: eventData.location.trim(),
+      Address: eventData.address.trim(),
+      Image: eventData.image.trim() || null, // Make sure to trim the image URL
+      Price: 0,
+      MaxAttendees: 100
+    };
 
-      console.log('Sending update request:', requestBody);
+    console.log('Sending update request:', requestBody);
 
-      const response = await fetch(`http://localhost:3000/api/events/${eventId}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(requestBody)
-      });
+    const response = await fetch(`http://localhost:3000/api/events/${eventId}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(requestBody)
+    });
 
-      const data = await response.json();
-      console.log('Update response:', data);
+    const data = await response.json();
+    console.log('Update response:', data);
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to update event');
-      }
-
-      if (data.success) {
-        toast.success('Event updated successfully');
-        navigate('/home', { 
-          state: { activeTab: 'created' }
-        });
-      } else {
-        throw new Error(data.message || 'Failed to update event');
-      }
-    } catch (error) {
-      console.error('Error updating event:', error);
-      toast.error(error.message || 'Failed to update event');
-    } finally {
-      setShowConfirmDialog(false);
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to update event');
     }
-  };
+
+    if (data.success) {
+      toast.success('Event updated successfully');
+      // Force a reload of the events list
+      navigate('/home', { 
+        state: { 
+          activeTab: 'created',
+          refresh: Date.now() // Add a timestamp to force refresh
+        }
+      });
+    } else {
+      throw new Error(data.message || 'Failed to update event');
+    }
+  } catch (error) {
+    console.error('Error updating event:', error);
+    toast.error(error.message || 'Failed to update event');
+  } finally {
+    setShowConfirmDialog(false);
+  }
+};
+
 
   const handleSaveCancel = () => {
     setShowConfirmDialog(false);
