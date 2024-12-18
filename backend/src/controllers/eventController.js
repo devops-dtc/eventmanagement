@@ -331,19 +331,21 @@ export const deleteEvent = async (req, res) => {
 
 export const getEventsByOrganizer = async (req, res) => {
     try {
-        console.log('User requesting events:', req.user); // Debug log
+        console.log('User requesting events:', req.user);
         const userId = req.user.UserID;
         const userType = req.user.UserType;
+
+        // First, check if user exists
+        console.log('Checking events for userId:', userId, 'userType:', userType);
 
         let query = `
             SELECT 
                 e.*,
                 u.UserFullname as OrganizerName,
-                ec.CategoryName,
-                (e.MaxAttendees - e.TicketsAvailable) as CurrentAttendees
+                COALESCE(COUNT(DISTINCT ee.EnrollmentID), 0) as AttendeeCount
             FROM EVENT e
             LEFT JOIN USER u ON e.CreatedBy = u.UserID
-            LEFT JOIN EVENT_CATEGORY ec ON e.CategoryID = ec.CategoryID
+            LEFT JOIN EVENT_ENROLLMENT ee ON e.EventID = ee.EventID
             WHERE e.EventIsDeleted = FALSE
         `;
 
@@ -351,42 +353,48 @@ export const getEventsByOrganizer = async (req, res) => {
             query += ` AND e.CreatedBy = ?`;
         }
 
-        query += `
-            GROUP BY e.EventID
-            ORDER BY e.StartDate DESC, e.StartTime DESC
-        `;
+        query += ` GROUP BY e.EventID`;
 
-        console.log('Executing query for userId:', userId); // Debug log
+        console.log('Executing query:', query);
+        console.log('Query parameters:', userType !== 'Admin' ? [userId] : []);
 
         const [events] = await pool.execute(
             query,
             userType !== 'Admin' ? [userId] : []
         );
 
-        console.log('Raw events from database:', events); // Debug log
+        console.log('Raw events from database:', events);
 
-        const formattedEvents = events.map(event => ({
-            EventID: event.EventID,
-            Title: event.Title,
-            Description: event.Description,
-            EventType: event.EventType,
-            CategoryName: event.CategoryName,
-            StartDate: new Date(event.StartDate).toLocaleDateString(),
-            StartTime: event.StartTime ? event.StartTime.slice(0, 5) : '',
-            EndDate: event.EndDate ? new Date(event.EndDate).toLocaleDateString() : '',
-            EndTime: event.EndTime ? event.EndTime.slice(0, 5) : '',
-            Location: event.Location,
-            Address: event.Address,
-            Price: parseFloat(event.Price) || 0,
-            MaxAttendees: parseInt(event.MaxAttendees) || 0,
-            TicketsAvailable: parseInt(event.TicketsAvailable) || 0,
-            OrganizerName: event.OrganizerName,
-            CurrentAttendees: parseInt(event.CurrentAttendees) || 0,
-            Published: event.Published,
-            EventIsApproved: event.EventIsApproved
-        }));
+        // Check if we got any events
+        if (events.length === 0) {
+            console.log('No events found for user');
+            return res.json({
+                success: true,
+                events: []
+            });
+        }
 
-        console.log('Sending formatted events:', formattedEvents); // Debug log
+        const formattedEvents = events.map(event => {
+            const formatted = {
+                EventID: event.EventID,
+                Title: event.Title,
+                EventType: event.EventType,
+                OrganizerName: event.OrganizerName,
+                StartDate: event.StartDate,
+                StartTime: event.StartTime,
+                EndDate: event.EndDate,
+                EndTime: event.EndTime,
+                Location: event.Location,
+                AttendeeCount: parseInt(event.AttendeeCount) || 0,
+                MaxAttendees: parseInt(event.MaxAttendees) || 0,
+                Published: Boolean(event.Published),
+                EventIsApproved: Boolean(event.EventIsApproved)
+            };
+            console.log('Formatted event:', formatted);
+            return formatted;
+        });
+
+        console.log('Sending formatted events:', formattedEvents);
 
         res.json({
             success: true,
@@ -401,6 +409,7 @@ export const getEventsByOrganizer = async (req, res) => {
         });
     }
 };
+
 
 
 export const approveEvent = async (req, res) => {
