@@ -1,4 +1,3 @@
-// src/pages/Admin/EventManagement.jsx
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Navigate, useNavigate, useLocation } from 'react-router-dom';
@@ -10,6 +9,7 @@ import styles from '../../styles/EventManagement.module.css';
 import { toast } from 'react-toastify';
 
 const EventManagement = () => {
+  // State Management
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -30,16 +30,22 @@ const EventManagement = () => {
   });
   const [loading, setLoading] = useState(true);
 
-  if (!isAuthenticated()) {
-    return <Navigate to="/login" />;
-  }
+  // Authentication & Authorization
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      navigate('/login');
+      return;
+    }
 
-  if (user?.role !== USER_ROLES.ADMIN && user?.role !== USER_ROLES.ORGANIZER) {
-    return <Navigate to="/unauthorized" />;
-  }
+    if (user?.role !== USER_ROLES.ADMIN && user?.role !== USER_ROLES.ORGANIZER) {
+      navigate('/unauthorized');
+      return;
+    }
+  }, [isAuthenticated, user, navigate]);
 
   const isAdmin = user?.role === USER_ROLES.ADMIN;
 
+  // Tab Configuration
   const tabs = isAdmin
     ? [
         { label: 'Published', value: 'published' },
@@ -52,88 +58,107 @@ const EventManagement = () => {
         { label: 'Admin Approval', value: 'adminApproval' }
       ];
 
-  // Fetch events based on tab
-  useEffect(() => {
-    const fetchEvents = async () => {
-      setLoading(true);
-      try {
-        const token = localStorage.getItem('token');
-        let endpoint = '';
+  // API Calls
+  const fetchEvents = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      console.log('Current activeTab:', activeTab);
+      console.log('User role:', user?.role);
 
-        switch(activeTab) {
-          case 'published':
-            endpoint = '/api/events/upcoming';
-            break;
-          case 'unpublished':
-            endpoint = '/api/events/organizer/events';
-            break;
-          case 'pendingApproval':
-          case 'adminApproval':
-            endpoint = '/api/events/organizer/events';
-            break;
-          default:
-            endpoint = '/api/events/upcoming';
-        }
+      // Always fetch from organizer events endpoint
+      const endpoint = '/api/events/organizer/events';
 
-        const response = await fetch(`http://localhost:3000${endpoint}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          credentials: 'include'
-        });
+      console.log('Fetching from endpoint:', endpoint);
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch events');
-        }
+      const response = await fetch(`http://localhost:3000${endpoint}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
 
-        const data = await response.json();
-        
-        if (data.success) {
-          const formattedEvents = data.events.map(event => ({
-            id: event.EventID,
-            title: event.Title,
-            type: event.EventType,
-            organizer: event.OrganizerName,
-            startTime: event.StartTime,
-            endTime: event.EndTime,
-            startDate: new Date(event.StartDate).toLocaleDateString(),
-            endDate: new Date(event.EndDate).toLocaleDateString(),
-            location: event.Location,
-            attendees: event.AttendeeCount,
-            maxAttendees: event.MaxAttendees,
-            status: event.Published ? 'Published' : event.EventIsApproved ? 'Unpublished' : 'Needs Approval'
-          }));
+      if (!response.ok) throw new Error('Failed to fetch events');
 
-          // Filter events based on status
-          const categorizedEvents = {
-            published: formattedEvents.filter(e => e.status === 'Published'),
-            unpublished: formattedEvents.filter(e => e.status === 'Unpublished'),
-            pendingApproval: formattedEvents.filter(e => e.status === 'Needs Approval')
-          };
+      const data = await response.json();
+      console.log('Received data:', data);
+      
+      if (data.success) {
+        const formattedEvents = data.events.map(event => ({
+          id: event.EventID,
+          title: event.Title,
+          type: event.EventType,
+          organizer: event.OrganizerName,
+          startTime: event.StartTime,
+          endTime: event.EndTime,
+          startDate: new Date(event.StartDate).toLocaleDateString(),
+          endDate: new Date(event.EndDate).toLocaleDateString(),
+          location: event.Location,
+          attendees: event.AttendeeCount || 0,
+          maxAttendees: event.MaxAttendees,
+          status: event.Published ? 'Published' : 
+                 event.EventIsApproved ? 'Unpublished' : 
+                 'Needs Approval'
+        }));
 
-          setEvents(prev => ({
-            ...prev,
-            [activeTab]: categorizedEvents[activeTab] || []
-          }));
-        }
-      } catch (error) {
-        console.error('Error fetching events:', error);
-        toast.error('Failed to fetch events');
-      } finally {
-        setLoading(false);
+        console.log('Formatted events:', formattedEvents);
+
+        // Categorize events
+        const categorizedEvents = {
+          published: formattedEvents.filter(e => e.status === 'Published'),
+          unpublished: formattedEvents.filter(e => e.status === 'Unpublished'),
+          pendingApproval: formattedEvents.filter(e => e.status === 'Needs Approval'),
+          adminApproval: formattedEvents.filter(e => e.status === 'Needs Approval')
+        };
+
+        console.log('Categorized events:', categorizedEvents);
+        console.log('Setting events for tab:', activeTab);
+
+        setEvents(categorizedEvents);
       }
-    };
+    } catch (error) {
+      console.error('Error fetching events:', error);
+      toast.error('Failed to fetch events');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+
+  useEffect(() => {
     fetchEvents();
   }, [activeTab]);
 
-    const currentEvents = events[activeTab] || [];
-  
-  const filteredEvents = currentEvents.filter(event =>
-    event.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Event Handlers
+  const handleApiCall = async (url, method, successMessage) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
 
+      if (!response.ok) throw new Error(`Failed to ${method.toLowerCase()} event`);
+
+      const data = await response.json();
+      if (data.success) {
+        toast.success(successMessage);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error(`Error: ${error.message}`);
+      toast.error(error.message);
+      return false;
+    }
+  };
+
+    // Event Handlers (continued)
   const handleAddEvent = () => {
     navigate('/create-event', {
       state: {
@@ -152,63 +177,41 @@ const EventManagement = () => {
 
   const handleManagementTabChange = (value) => {
     setActiveManagementTab(value);
-    if (value === 'users') {
-      navigate('/user-management');
-    } else {
-      navigate('/event-management');
-    }
+    navigate(value === 'users' ? '/user-management' : '/event-management');
   };
 
-  const handleSearch = (e) => {
-    setSearchTerm(e.target.value);
-  };
+  const handleSearch = (e) => setSearchTerm(e.target.value);
 
   const handleCheckEvent = (eventId) => {
-    setSelectedEvents(prev => {
-      if (prev.includes(eventId)) {
-        return prev.filter(id => id !== eventId);
-      }
-      return [...prev, eventId];
-    });
+    setSelectedEvents(prev => 
+      prev.includes(eventId) 
+        ? prev.filter(id => id !== eventId)
+        : [...prev, eventId]
+    );
   };
 
   const handleCheckAll = (e) => {
-    if (e.target.checked) {
-      setSelectedEvents(filteredEvents.map(event => event.id));
-    } else {
-      setSelectedEvents([]);
-    }
+    setSelectedEvents(e.target.checked ? filteredEvents.map(event => event.id) : []);
   };
 
   const handleDeleteEvents = async () => {
     try {
-      const token = localStorage.getItem('token');
-      
-      // Delete each selected event
       for (const eventId of selectedEvents) {
-        const response = await fetch(`http://localhost:3000/api/events/${eventId}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          credentials: 'include'
-        });
+        const success = await handleApiCall(
+          `http://localhost:3000/api/events/${eventId}`,
+          'DELETE',
+          'Event deleted successfully'
+        );
 
-        if (!response.ok) {
-          throw new Error(`Failed to delete event ${eventId}`);
+        if (success) {
+          setEvents(prev => ({
+            ...prev,
+            [activeTab]: prev[activeTab].filter(event => !selectedEvents.includes(event.id))
+          }));
         }
       }
-
-      // Update local state
-      setEvents(prev => ({
-        ...prev,
-        [activeTab]: prev[activeTab].filter(event => !selectedEvents.includes(event.id))
-      }));
-
       setShowDeleteDialog(false);
       setSelectedEvents([]);
-      toast.success('Events deleted successfully');
     } catch (error) {
       console.error('Error deleting events:', error);
       toast.error('Failed to delete events');
@@ -216,66 +219,36 @@ const EventManagement = () => {
   };
 
   const handleApproveEvent = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:3000/api/events/${selectedEventForAction.id}/approve`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include'
-      });
+    const success = await handleApiCall(
+      `http://localhost:3000/api/events/${selectedEventForAction.id}/approve`,
+      'PUT',
+      'Event approved successfully'
+    );
 
-      if (!response.ok) {
-        throw new Error('Failed to approve event');
-      }
-
-      const data = await response.json();
-      if (data.success) {
-        setEvents(prev => ({
-          ...prev,
-          pendingApproval: prev.pendingApproval.filter(event => event.id !== selectedEventForAction.id),
-          unpublished: [...prev.unpublished, { ...selectedEventForAction, status: 'Unpublished' }]
-        }));
-        toast.success('Event approved successfully');
-      }
-    } catch (error) {
-      console.error('Error approving event:', error);
-      toast.error('Failed to approve event');
+    if (success) {
+      setEvents(prev => ({
+        ...prev,
+        pendingApproval: prev.pendingApproval.filter(event => event.id !== selectedEventForAction.id),
+        unpublished: [...prev.unpublished, { ...selectedEventForAction, status: 'Unpublished' }]
+      }));
     }
     setShowApprovalDialog(false);
     setSelectedEventForAction(null);
   };
 
   const handlePublishEvent = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:3000/api/events/${selectedEventForAction.id}/publish`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include'
-      });
+    const success = await handleApiCall(
+      `http://localhost:3000/api/events/${selectedEventForAction.id}/publish`,
+      'PUT',
+      'Event published successfully'
+    );
 
-      if (!response.ok) {
-        throw new Error('Failed to publish event');
-      }
-
-      const data = await response.json();
-      if (data.success) {
-        setEvents(prev => ({
-          ...prev,
-          unpublished: prev.unpublished.filter(event => event.id !== selectedEventForAction.id),
-          published: [...prev.published, { ...selectedEventForAction, status: 'Published' }]
-        }));
-        toast.success('Event published successfully');
-      }
-    } catch (error) {
-      console.error('Error publishing event:', error);
-      toast.error('Failed to publish event');
+    if (success) {
+      setEvents(prev => ({
+        ...prev,
+        unpublished: prev.unpublished.filter(event => event.id !== selectedEventForAction.id),
+        published: [...prev.published, { ...selectedEventForAction, status: 'Published' }]
+      }));
     }
     setShowPublishDialog(false);
     setSelectedEventForAction(null);
@@ -293,23 +266,22 @@ const EventManagement = () => {
   };
 
   const handleEditEvent = (eventId) => {
-    const eventToEdit = currentEvents.find(event => event.id === eventId);
     navigate('/edit-event', { 
       state: { 
-        eventId: eventId,
+        eventId,
         sourceRoute: '/event-management',
-        activeTab: activeTab,
+        activeTab,
         userRole: user.role
       }
     });
     setShowOptionsMenu({ show: false, eventId: null, x: 0, y: 0 });
   };
 
-    const handleManageUsers = (eventId) => {
+  const handleManageUsers = (eventId) => {
     navigate('/user-management', { 
       state: { 
-        eventId: eventId,
-        eventTitle: currentEvents.find(event => event.id === eventId)?.title
+        eventId,
+        eventTitle: events[activeTab].find(event => event.id === eventId)?.title
       }
     });
     setShowOptionsMenu({ show: false, eventId: null, x: 0, y: 0 });
@@ -323,73 +295,61 @@ const EventManagement = () => {
       } else if (activeTab === 'unpublished' && event.status === 'Unpublished') {
         setShowPublishDialog(true);
       }
-    } else {
-      if (activeTab === 'unpublished' && event.status === 'Unpublished') {
-        setShowPublishDialog(true);
+    } else if (activeTab === 'unpublished' && event.status === 'Unpublished') {
+      setShowPublishDialog(true);
+    }
+  };
+
+  // Click Outside Handler
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (showOptionsMenu.show && !e.target.closest(`.${styles.menuButton}`)) {
+        setShowOptionsMenu({ show: false, eventId: null, x: 0, y: 0 });
       }
-    }
-  };
-
-  const handleClickOutside = (e) => {
-    if (showOptionsMenu.show && !e.target.closest(`.${styles.menuButton}`)) {
-      setShowOptionsMenu({ show: false, eventId: null, x: 0, y: 0 });
-    }
-  };
-
-  React.useEffect(() => {
-    document.addEventListener('click', handleClickOutside);
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
     };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
   }, [showOptionsMenu.show]);
 
-  React.useEffect(() => {
-    const isUserManagement = location.pathname.includes('user-management');
-    setActiveManagementTab(isUserManagement ? 'users' : 'events');
+  // Management Tab Handler
+  useEffect(() => {
+    setActiveManagementTab(location.pathname.includes('user-management') ? 'users' : 'events');
   }, [location]);
 
+  // Filter Events
+  const currentEvents = events[activeTab] || [];
+  const filteredEvents = currentEvents.filter(event =>
+    event.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Render Methods
   const renderActionButton = (event) => {
     if (event.status === 'Published') {
-      return (
-        <span className={`${styles.status} ${styles.published}`}>
-          Published
-        </span>
-      );
+      return <span className={`${styles.status} ${styles.published}`}>Published</span>;
     }
 
     if (isAdmin) {
       if (activeTab === 'pendingApproval' && event.status === 'Needs Approval') {
         return (
-          <button 
-            className={styles.actionButton}
-            onClick={() => handleActionButton(event)}
-          >
+          <button className={styles.actionButton} onClick={() => handleActionButton(event)}>
             Approve
           </button>
         );
       }
-
       if (activeTab === 'unpublished' && event.status === 'Unpublished') {
         return (
-          <button 
-            className={styles.actionButton}
-            onClick={() => handleActionButton(event)}
-          >
+          <button className={styles.actionButton} onClick={() => handleActionButton(event)}>
             Publish
           </button>
         );
       }
-    } else {
-      if (activeTab === 'unpublished' && event.status === 'Unpublished') {
-        return (
-          <button 
-            className={styles.actionButton}
-            onClick={() => handleActionButton(event)}
-          >
-            Publish
-          </button>
-        );
-      }
+    } else if (activeTab === 'unpublished' && event.status === 'Unpublished') {
+      return (
+        <button className={styles.actionButton} onClick={() => handleActionButton(event)}>
+          Publish
+        </button>
+      );
     }
 
     return (
@@ -399,6 +359,7 @@ const EventManagement = () => {
     );
   };
 
+  // JSX
   return (
     <div className={styles.adminContainer}>
       <Navbar />
