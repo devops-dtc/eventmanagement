@@ -16,8 +16,8 @@ import { authenticateToken, checkRole } from '../middlewares/auth.js';
 const router = express.Router();
 
 // Public routes - no authentication required
+router.get('/past', getPastEvents);     // Move this before authenticateToken
 router.get('/upcoming', getUpcomingEvents);
-router.get('/past', getPastEvents);
 
 // Authentication required for all routes below
 router.use(authenticateToken);
@@ -36,5 +36,4 @@ router.put('/:id/publish', checkRole(['Organizer', 'Admin']), publishEvent);
 // Admin-only routes
 router.put('/:id/approve', checkRole(['Admin']), approveEvent);
 
-// Export the router
 export default router;

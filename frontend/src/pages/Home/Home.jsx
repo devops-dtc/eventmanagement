@@ -24,7 +24,6 @@ const HomePage = () => {
   const isAdmin = user?.role === 'Admin';
   const canManageEvents = isOrganizer || isAdmin;
 
-  // Simple function to handle image URLs
   const getValidImageUrl = (imageData, eventId) => {
     if (!imageData) return `https://picsum.photos/seed/${eventId}/800/400`;
     
@@ -59,12 +58,10 @@ const HomePage = () => {
           'Content-Type': 'application/json'
         };
 
-        // Add authorization header if token exists
         if (token) {
           headers['Authorization'] = `Bearer ${token}`;
         }
 
-        // Select endpoint based on active tab
         switch(activeTab) {
           case 'created':
             endpoint = '/api/events/organizer/events';
@@ -81,7 +78,7 @@ const HomePage = () => {
             break;
         }
 
-        console.log('Fetching events from:', endpoint);
+        console.log(`Fetching ${activeTab} events from:`, endpoint);
 
         const response = await fetch(`http://localhost:3000${endpoint}`, { 
           headers,
@@ -93,18 +90,22 @@ const HomePage = () => {
         }
 
         const data = await response.json();
-        console.log('Received event data:', data);
+        console.log(`Received ${activeTab} event data:`, data);
         
         if (data.success) {
           const formattedEvents = data.events.map(event => ({
             ...event,
             StartDate: new Date(event.StartDate).toLocaleDateString(),
             StartTime: event.StartTime ? event.StartTime.slice(0, 5) : '',
+            EndDate: event.EndDate ? new Date(event.EndDate).toLocaleDateString() : '',
+            EndTime: event.EndTime ? event.EndTime.slice(0, 5) : '',
             Image: `https://picsum.photos/seed/${event.EventID}/800/400`,
             MaxAttendees: parseInt(event.MaxAttendees) || 0,
             TicketsAvailable: parseInt(event.TicketsAvailable) || 0,
             CurrentAttendees: parseInt(event.CurrentAttendees) || 0
           }));
+          
+          console.log(`Formatted ${activeTab} events:`, formattedEvents);
           
           setEvents(prev => ({
             ...prev,
@@ -114,41 +115,40 @@ const HomePage = () => {
           toast.error(data.message || 'Failed to fetch events');
         }
       } catch (error) {
-        console.error('Error fetching events:', error);
+        console.error(`Error fetching ${activeTab} events:`, error);
         toast.error('Failed to fetch events');
       } finally {
         setLoading(false);
       }
     };
 
-    // Only fetch if user is authenticated for protected tabs
-    if (activeTab === 'upcoming' || 
-        (isAuthenticated() && ['created', 'enrolled', 'past'].includes(activeTab))) {
+    // Updated condition to allow past events without authentication
+    if (activeTab === 'upcoming' || activeTab === 'past' || 
+        (isAuthenticated() && ['created', 'enrolled'].includes(activeTab))) {
       fetchEvents();
     }
-}, [activeTab, isAuthenticated]);
-
-
-
+  }, [activeTab, isAuthenticated]);
 
   const getTabs = () => {
+    const baseTabs = [
+      { value: 'upcoming', label: 'Upcoming Events' },
+      { value: 'past', label: 'Past Events' }
+    ];
+    
     if (!isAuthenticated()) {
-      return [
-        { value: 'upcoming', label: 'Upcoming Events' },
-        { value: 'past', label: 'Past Events' }
-      ];
+      return baseTabs;
     }
     
     if (canManageEvents) {
       return [
-        { value: 'upcoming', label: 'Upcoming Events' },
+        ...baseTabs,
         { value: 'enrolled', label: 'Enrolled Events' },
         { value: 'created', label: 'Created Events' }
       ];
     }
     
     return [
-      { value: 'upcoming', label: 'Upcoming Events' },
+      ...baseTabs,
       { value: 'enrolled', label: 'Enrolled Events' }
     ];
   };
@@ -181,10 +181,7 @@ const HomePage = () => {
   const handleEditEvent = (event, e) => {
     e.preventDefault();
     e.stopPropagation();
-    
     console.log('Editing event:', event);
-    console.log('Event ID:', event.EventID);
-  
     navigate('/edit-event', {
       state: {
         eventId: event.EventID
@@ -212,6 +209,7 @@ const HomePage = () => {
           enrolled: prev.enrolled.filter(event => event.EnrollmentID !== enrollmentId)
         }));
 
+        // Refresh upcoming events after enrollment removal
         const upcomingResponse = await fetch(`http://localhost:3000/api/events/upcoming`, {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -226,9 +224,12 @@ const HomePage = () => {
             ...event,
             StartDate: new Date(event.StartDate).toLocaleDateString(),
             StartTime: event.StartTime ? event.StartTime.slice(0, 5) : '',
-            AttendeeCount: event.MaxAttendees - event.TicketsAvailable || 0,
+            EndDate: event.EndDate ? new Date(event.EndDate).toLocaleDateString() : '',
+            EndTime: event.EndTime ? event.EndTime.slice(0, 5) : '',
+            Image: getValidImageUrl(event.Image, event.EventID),
             MaxAttendees: parseInt(event.MaxAttendees) || 0,
-            Image: getValidImageUrl(event.Image, event.EventID)
+            TicketsAvailable: parseInt(event.TicketsAvailable) || 0,
+            CurrentAttendees: parseInt(event.CurrentAttendees) || 0
           }));
 
           setEvents(prev => ({
@@ -248,6 +249,10 @@ const HomePage = () => {
   };
 
   const renderEventButton = (event) => {
+    if (activeTab === 'past') {
+      return null;  // No buttons for past events
+    }
+
     if (!isAuthenticated()) {
       return (
         <button 
@@ -279,10 +284,6 @@ const HomePage = () => {
           Remove Enrollment
         </button>
       );
-    }
-
-    if (activeTab === 'past') {
-      return null;
     }
 
     return (

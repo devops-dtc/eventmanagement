@@ -156,35 +156,59 @@ export const getPastEvents = async (req, res) => {
             SELECT 
                 e.*,
                 u.UserFullname as OrganizerName,
-                COUNT(ee.EnrollmentID) as CurrentAttendees
+                ec.CategoryName,
+                (e.MaxAttendees - e.TicketsAvailable) as CurrentAttendees
             FROM EVENT e
             LEFT JOIN USER u ON e.CreatedBy = u.UserID
-            LEFT JOIN EVENT_ENROLLMENT ee ON e.EventID = ee.EventID
+            LEFT JOIN EVENT_CATEGORY ec ON e.CategoryID = ec.CategoryID
             WHERE e.StartDate < CURDATE()
             AND e.Published = TRUE 
             AND e.EventIsApproved = TRUE 
             AND e.EventIsDeleted = FALSE
-            GROUP BY e.EventID
             ORDER BY e.StartDate DESC, e.StartTime DESC
         `);
 
+        console.log('Retrieved past events:', events);
+
         const formattedEvents = events.map(event => ({
-            ...event,
-            AttendeeCount: parseInt(event.CurrentAttendees) || 0
+            EventID: event.EventID,
+            Title: event.Title,
+            Description: event.Description,
+            EventType: event.EventType,
+            CategoryName: event.CategoryName,
+            StartDate: new Date(event.StartDate).toLocaleDateString(),
+            StartTime: event.StartTime ? event.StartTime.slice(0, 5) : '',
+            EndDate: event.EndDate ? new Date(event.EndDate).toLocaleDateString() : '',
+            EndTime: event.EndTime ? event.EndTime.slice(0, 5) : '',
+            Location: event.Location,
+            Address: event.Address,
+            Price: parseFloat(event.Price) || 0,
+            MaxAttendees: parseInt(event.MaxAttendees) || 0,
+            TicketsAvailable: parseInt(event.TicketsAvailable) || 0,
+            OrganizerName: event.OrganizerName,
+            CurrentAttendees: parseInt(event.CurrentAttendees) || 0
         }));
+
+        console.log('Sending formatted past events:', formattedEvents);
 
         res.json({
             success: true,
-            events: formattedEvents || []
+            events: formattedEvents
         });
     } catch (error) {
         console.error('Error fetching past events:', error);
         res.status(500).json({
             success: false,
-            message: 'Failed to fetch past events'
+            message: 'Failed to fetch past events',
+            error: error.message
         });
     }
 };
+
+
+
+
+
 
 export const getEventById = async (req, res) => {
     try {
