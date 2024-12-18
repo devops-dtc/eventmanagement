@@ -14,16 +14,17 @@ import { validateEvent } from '../utils/validation.js';
 export const createEvent = async (req, res) => {
     try {
         console.log('Create event request:', req.body);
+        console.log('User creating event:', req.user);
 
         const eventData = {
             ...req.body,
             CreatedBy: req.user.UserID,
-            Published: false,
+            Published: true, // Auto-publish
             EventIsDeleted: false,
-            EventIsApproved: false,
+            EventIsApproved: true, // Auto-approve
             EventType: req.body.EventType || 'Physical',
             MaxAttendees: req.body.MaxAttendees || 100,
-            TicketsAvailable: req.body.TicketsAvailable || 100,
+            TicketsAvailable: req.body.TicketsAvailable || req.body.MaxAttendees || 100,
             Price: req.body.Price || 0
         };
 
@@ -38,10 +39,22 @@ export const createEvent = async (req, res) => {
 
         const event = await createNewEvent(eventData);
         
+        // Format the response
+        const formattedEvent = {
+            ...event,
+            StartDate: new Date(event.StartDate).toLocaleDateString(),
+            StartTime: event.StartTime ? event.StartTime.slice(0, 5) : '',
+            EndDate: event.EndDate ? new Date(event.EndDate).toLocaleDateString() : '',
+            EndTime: event.EndTime ? event.EndTime.slice(0, 5) : '',
+            MaxAttendees: parseInt(event.MaxAttendees),
+            TicketsAvailable: parseInt(event.TicketsAvailable),
+            Price: parseFloat(event.Price)
+        };
+
         res.status(201).json({
             success: true,
             message: 'Event created successfully',
-            event
+            event: formattedEvent
         });
     } catch (error) {
         console.error('Error creating event:', error);
@@ -52,6 +65,8 @@ export const createEvent = async (req, res) => {
         });
     }
 };
+
+
 
 export const getAllEvents = async (req, res) => {
     try {
@@ -82,22 +97,42 @@ export const getUpcomingEvents = async (req, res) => {
             SELECT 
                 e.*,
                 u.UserFullname as OrganizerName,
-                COUNT(ee.EnrollmentID) as CurrentAttendees
+                ec.CategoryName,
+                (e.MaxAttendees - e.TicketsAvailable) as CurrentAttendees
             FROM EVENT e
             LEFT JOIN USER u ON e.CreatedBy = u.UserID
-            LEFT JOIN EVENT_ENROLLMENT ee ON e.EventID = ee.EventID
+            LEFT JOIN EVENT_CATEGORY ec ON e.CategoryID = ec.CategoryID
             WHERE e.StartDate >= CURDATE()
             AND e.Published = TRUE 
             AND e.EventIsApproved = TRUE 
-            AND e.EventIsDeleted = FALSE
+            AND (e.EventIsDeleted IS NULL OR e.EventIsDeleted = FALSE)
             GROUP BY e.EventID
             ORDER BY e.StartDate ASC, e.StartTime ASC
         `);
 
+        console.log('Retrieved events:', events); // Debug log
+
         const formattedEvents = events.map(event => ({
-            ...event,
-            AttendeeCount: parseInt(event.CurrentAttendees) || 0
+            EventID: event.EventID,
+            Title: event.Title,
+            Description: event.Description,
+            EventType: event.EventType,
+            CategoryName: event.CategoryName,
+            StartDate: new Date(event.StartDate).toLocaleDateString(),
+            StartTime: event.StartTime ? event.StartTime.slice(0, 5) : '',
+            EndDate: event.EndDate ? new Date(event.EndDate).toLocaleDateString() : '',
+            EndTime: event.EndTime ? event.EndTime.slice(0, 5) : '',
+            Location: event.Location,
+            Address: event.Address,
+            Price: parseFloat(event.Price) || 0,
+            MaxAttendees: parseInt(event.MaxAttendees) || 0,
+            TicketsAvailable: parseInt(event.TicketsAvailable) || 0,
+            OrganizerName: event.OrganizerName,
+            CurrentAttendees: parseInt(event.CurrentAttendees) || 0
         }));
+
+        // Add debug logging
+        console.log('Sending formatted events:', formattedEvents);
 
         res.json({
             success: true,
@@ -107,10 +142,13 @@ export const getUpcomingEvents = async (req, res) => {
         console.error('Error fetching upcoming events:', error);
         res.status(500).json({
             success: false,
-            message: 'Failed to fetch upcoming events'
+            message: 'Failed to fetch upcoming events',
+            error: error.message
         });
     }
 };
+
+
 
 export const getPastEvents = async (req, res) => {
     try {
@@ -269,6 +307,7 @@ export const deleteEvent = async (req, res) => {
 
 export const getEventsByOrganizer = async (req, res) => {
     try {
+        console.log('User requesting events:', req.user); // Debug log
         const userId = req.user.UserID;
         const userType = req.user.UserType;
 
@@ -276,10 +315,11 @@ export const getEventsByOrganizer = async (req, res) => {
             SELECT 
                 e.*,
                 u.UserFullname as OrganizerName,
-                COUNT(ee.EnrollmentID) as CurrentAttendees
+                ec.CategoryName,
+                (e.MaxAttendees - e.TicketsAvailable) as CurrentAttendees
             FROM EVENT e
             LEFT JOIN USER u ON e.CreatedBy = u.UserID
-            LEFT JOIN EVENT_ENROLLMENT ee ON e.EventID = ee.EventID
+            LEFT JOIN EVENT_CATEGORY ec ON e.CategoryID = ec.CategoryID
             WHERE e.EventIsDeleted = FALSE
         `;
 
@@ -292,15 +332,37 @@ export const getEventsByOrganizer = async (req, res) => {
             ORDER BY e.StartDate DESC, e.StartTime DESC
         `;
 
+        console.log('Executing query for userId:', userId); // Debug log
+
         const [events] = await pool.execute(
             query,
             userType !== 'Admin' ? [userId] : []
         );
 
+        console.log('Raw events from database:', events); // Debug log
+
         const formattedEvents = events.map(event => ({
-            ...event,
-            AttendeeCount: parseInt(event.CurrentAttendees) || 0
+            EventID: event.EventID,
+            Title: event.Title,
+            Description: event.Description,
+            EventType: event.EventType,
+            CategoryName: event.CategoryName,
+            StartDate: new Date(event.StartDate).toLocaleDateString(),
+            StartTime: event.StartTime ? event.StartTime.slice(0, 5) : '',
+            EndDate: event.EndDate ? new Date(event.EndDate).toLocaleDateString() : '',
+            EndTime: event.EndTime ? event.EndTime.slice(0, 5) : '',
+            Location: event.Location,
+            Address: event.Address,
+            Price: parseFloat(event.Price) || 0,
+            MaxAttendees: parseInt(event.MaxAttendees) || 0,
+            TicketsAvailable: parseInt(event.TicketsAvailable) || 0,
+            OrganizerName: event.OrganizerName,
+            CurrentAttendees: parseInt(event.CurrentAttendees) || 0,
+            Published: event.Published,
+            EventIsApproved: event.EventIsApproved
         }));
+
+        console.log('Sending formatted events:', formattedEvents); // Debug log
 
         res.json({
             success: true,
@@ -310,10 +372,12 @@ export const getEventsByOrganizer = async (req, res) => {
         console.error('Error fetching organizer events:', error);
         res.status(500).json({ 
             success: false,
-            message: 'Failed to fetch organizer events' 
+            message: 'Failed to fetch organizer events',
+            error: error.message
         });
     }
 };
+
 
 export const approveEvent = async (req, res) => {
     try {

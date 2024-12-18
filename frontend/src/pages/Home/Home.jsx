@@ -59,24 +59,18 @@ const HomePage = () => {
           'Content-Type': 'application/json'
         };
 
-        if (token && isAuthenticated()) {
+        // Add authorization header if token exists
+        if (token) {
           headers['Authorization'] = `Bearer ${token}`;
         }
 
+        // Select endpoint based on active tab
         switch(activeTab) {
-          case 'enrolled':
-            if (!isAuthenticated()) {
-              setActiveTab('upcoming');
-              return;
-            }
-            endpoint = '/api/enroll/events';
-            break;
           case 'created':
-            if (!isAuthenticated() || !canManageEvents) {
-              setActiveTab('upcoming');
-              return;
-            }
             endpoint = '/api/events/organizer/events';
+            break;
+          case 'enrolled':
+            endpoint = '/api/enroll/events';
             break;
           case 'past':
             endpoint = '/api/events/past';
@@ -86,6 +80,8 @@ const HomePage = () => {
             endpoint = '/api/events/upcoming';
             break;
         }
+
+        console.log('Fetching events from:', endpoint);
 
         const response = await fetch(`http://localhost:3000${endpoint}`, { 
           headers,
@@ -97,17 +93,19 @@ const HomePage = () => {
         }
 
         const data = await response.json();
+        console.log('Received event data:', data);
         
         if (data.success) {
           const formattedEvents = data.events.map(event => ({
             ...event,
             StartDate: new Date(event.StartDate).toLocaleDateString(),
             StartTime: event.StartTime ? event.StartTime.slice(0, 5) : '',
-            AttendeeCount: event.MaxAttendees - event.TicketsAvailable || 0,
+            Image: `https://picsum.photos/seed/${event.EventID}/800/400`,
             MaxAttendees: parseInt(event.MaxAttendees) || 0,
-            Image: getValidImageUrl(event.Image, event.EventID)
+            TicketsAvailable: parseInt(event.TicketsAvailable) || 0,
+            CurrentAttendees: parseInt(event.CurrentAttendees) || 0
           }));
-
+          
           setEvents(prev => ({
             ...prev,
             [activeTab]: formattedEvents
@@ -117,14 +115,21 @@ const HomePage = () => {
         }
       } catch (error) {
         console.error('Error fetching events:', error);
-        toast.error(`Failed to fetch ${activeTab} events`);
+        toast.error('Failed to fetch events');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchEvents();
-  }, [activeTab, isAuthenticated, canManageEvents]);
+    // Only fetch if user is authenticated for protected tabs
+    if (activeTab === 'upcoming' || 
+        (isAuthenticated() && ['created', 'enrolled', 'past'].includes(activeTab))) {
+      fetchEvents();
+    }
+}, [activeTab, isAuthenticated]);
+
+
+
 
   const getTabs = () => {
     if (!isAuthenticated()) {
