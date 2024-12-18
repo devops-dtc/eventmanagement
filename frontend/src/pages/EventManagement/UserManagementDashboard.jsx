@@ -1,3 +1,4 @@
+// src/pages/Admin/UserManagement.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Navigate, useNavigate, useLocation } from 'react-router-dom';
@@ -5,36 +6,13 @@ import Navbar from '../../components/Layout/Navbar/Navbar';
 import MessageDialog from '../../components/MessageDialog/MessageDialog';
 import { USER_ROLES } from '../../utils/constants';
 import styles from '../../styles/EventManagement.module.css';
-import adminUsersData from '../../mockdata/AdminUserList.json';
-import organizerUsersData from '../../mockdata/OrganizerUserList.json';
-import bannedUsersData from '../../mockdata/BannedUsers.json';
+import { toast } from 'react-toastify';
 
 const UserManagement = () => {
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const eventDetails = location.state;
-
-  if (!isAuthenticated()) {
-    return <Navigate to="/login" />;
-  }
-
-  if (user?.role !== USER_ROLES.ADMIN && user?.role !== USER_ROLES.ORGANIZER) {
-    return <Navigate to="/unauthorized" />;
-  }
-
-  const isAdmin = user?.role === USER_ROLES.ADMIN;
-
-  const getInitialUserList = useCallback(() => {
-    if (eventDetails?.eventId) {
-      return isAdmin 
-        ? (adminUsersData.eventSpecificUsers[eventDetails.eventId] || [])
-        : (organizerUsersData.eventSpecificUsers[eventDetails.eventId] || []);
-    }
-    return isAdmin 
-      ? adminUsersData.platformUsers 
-      : organizerUsersData.organizerUsers;
-  }, [isAdmin, eventDetails]);
 
   const [activeManagementTab, setActiveManagementTab] = useState('users');
   const [searchTerm, setSearchTerm] = useState('');
@@ -50,8 +28,9 @@ const UserManagement = () => {
     x: 0, 
     y: 0 
   });
-  const [bannedUsers, setBannedUsers] = useState(bannedUsersData.bannedUsers || []);
-  const [users, setUsers] = useState(getInitialUserList);
+  const [users, setUsers] = useState([]);
+  const [bannedUsers, setBannedUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [newUser, setNewUser] = useState({
     fullName: '',
     email: '',
@@ -61,16 +40,62 @@ const UserManagement = () => {
   });
   const [formErrors, setFormErrors] = useState({});
 
+  if (!isAuthenticated()) {
+    return <Navigate to="/login" />;
+  }
+
+  if (user?.role !== USER_ROLES.ADMIN && user?.role !== USER_ROLES.ORGANIZER) {
+    return <Navigate to="/unauthorized" />;
+  }
+
+  const isAdmin = user?.role === USER_ROLES.ADMIN;
+
+  // Fetch users
   useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (showOptionsMenu.show && !e.target.closest(`.${styles.menuButton}`)) {
-        setShowOptionsMenu({ show: false, userId: null, x: 0, y: 0 });
+    const fetchUsers = async () => {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem('token');
+        let endpoint = eventDetails?.eventId 
+          ? `/api/events/${eventDetails.eventId}/users`
+          : '/api/users';
+
+        const response = await fetch(`http://localhost:3000${endpoint}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch users');
+        }
+
+        const data = await response.json();
+        
+        if (data.success) {
+          const formattedUsers = data.users.map(user => ({
+            id: user.UserID,
+            name: user.UserFullname,
+            email: user.UserEmail,
+            role: user.UserType,
+            status: user.UserStatus
+          }));
+
+          setUsers(formattedUsers.filter(u => u.status !== 'Banned'));
+          setBannedUsers(formattedUsers.filter(u => u.status === 'Banned'));
+        }
+      } catch (error) {
+        console.error('Error fetching users:', error);
+        toast.error('Failed to fetch users');
+      } finally {
+        setLoading(false);
       }
     };
 
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, [showOptionsMenu.show]);
+    fetchUsers();
+  }, [eventDetails]);
 
   const filteredUsers = users.filter(user =>
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -102,34 +127,80 @@ const UserManagement = () => {
     );
   };
 
-  const handleDeleteUsers = () => {
-    setUsers(prev => prev.filter(user => !selectedUsers.includes(user.id)));
-    setSelectedUsers([]);
-    setShowDeleteDialog(false);
+  const handleDeleteUsers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      for (const userId of selectedUsers) {
+        const response = await fetch(`http://localhost:3000/api/users/${userId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to delete user ${userId}`);
+        }
+      }
+
+      setUsers(prev => prev.filter(user => !selectedUsers.includes(user.id)));
+      setSelectedUsers([]);
+      setShowDeleteDialog(false);
+      toast.success('Users deleted successfully');
+    } catch (error) {
+      console.error('Error deleting users:', error);
+      toast.error('Failed to delete users');
+    }
   };
 
-  const canBanUser = useCallback((targetUser) => {
+    const canBanUser = useCallback((targetUser) => {
     if (!targetUser || targetUser.role === 'Banned') return false;
     return isAdmin ? targetUser.role !== 'Admin' : targetUser.role === 'Attendee';
   }, [isAdmin]);
 
-  const handleBanUser = () => {
+  const handleBanUser = async () => {
     if (!userToBan) return;
 
-    const bannedUser = {
-      ...userToBan,
-      role: 'Banned',
-      bannedAt: new Date().toISOString().split('T')[0],
-      bannedBy: user.email,
-    };
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:3000/api/users/${userToBan.id}/ban`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          bannedBy: user.id,
+          banReason: 'Banned by administrator'
+        }),
+        credentials: 'include'
+      });
 
-    setBannedUsers(prev => [...prev, bannedUser]);
-    setUsers(prev => prev.map(u => 
-      u.id === userToBan.id 
-        ? { ...u, role: 'Banned' }
-        : u
-    ));
-    
+      if (!response.ok) {
+        throw new Error('Failed to ban user');
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        const bannedUserData = {
+          ...userToBan,
+          status: 'Banned',
+          bannedAt: new Date().toISOString(),
+          bannedBy: user.email
+        };
+
+        setUsers(prev => prev.filter(u => u.id !== userToBan.id));
+        setBannedUsers(prev => [...prev, bannedUserData]);
+        toast.success('User banned successfully');
+      }
+    } catch (error) {
+      console.error('Error banning user:', error);
+      toast.error('Failed to ban user');
+    }
+
     setShowBanDialog(false);
     setUserToBan(null);
     setShowOptionsMenu({ show: false, userId: null, x: 0, y: 0 });
@@ -141,11 +212,10 @@ const UserManagement = () => {
     setShowOptionsMenu({
       show: true,
       userId: user.id,
-      x: rect.left - 150, // Adjust the width of your menu to position it properly
+      x: rect.left - 150,
       y: rect.bottom + window.scrollY
     });
   };
-  
 
   const validateForm = () => {
     const errors = {};
@@ -173,7 +243,7 @@ const UserManagement = () => {
     return errors;
   };
 
-    const handleAddUserSubmit = async () => {
+  const handleAddUserSubmit = async () => {
     const errors = validateForm();
 
     if (Object.keys(errors).length > 0) {
@@ -182,28 +252,53 @@ const UserManagement = () => {
     }
 
     try {
-      const newUserId = Math.random().toString(36).substr(2, 9);
-      const newUserData = {
-        id: newUserId,
-        name: newUser.fullName,
-        email: newUser.email,
-        role: newUser.role
-      };
-
-      setUsers(prev => [...prev, newUserData]);
-      
-      setNewUser({
-        fullName: '',
-        email: '',
-        password: '',
-        confirmPassword: '',
-        role: 'Attendee'
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:3000/api/users', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          fullName: newUser.fullName,
+          email: newUser.email,
+          password: newUser.password,
+          userType: newUser.role
+        }),
+        credentials: 'include'
       });
-      setFormErrors({});
-      setShowAddUserDialog(false);
-      setShowCreateConfirmDialog(false);
+
+      if (!response.ok) {
+        throw new Error('Failed to create user');
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        const newUserData = {
+          id: data.user.UserID,
+          name: data.user.UserFullname,
+          email: data.user.UserEmail,
+          role: data.user.UserType,
+          status: 'Active'
+        };
+
+        setUsers(prev => [...prev, newUserData]);
+        setNewUser({
+          fullName: '',
+          email: '',
+          password: '',
+          confirmPassword: '',
+          role: 'Attendee'
+        });
+        setFormErrors({});
+        setShowAddUserDialog(false);
+        setShowCreateConfirmDialog(false);
+        toast.success('User created successfully');
+      }
     } catch (error) {
       console.error('Error creating user:', error);
+      toast.error('Failed to create user');
       setFormErrors({ submit: 'Failed to create user. Please try again.' });
     }
   };
@@ -235,8 +330,8 @@ const UserManagement = () => {
     }
     return <div className={buttonClass}>{role}</div>;
   };
-
-  const renderAddUserDialog = () => (
+  
+    const renderAddUserDialog = () => (
     <div className={styles.modalOverlay}>
       <div className={`${styles.modalContent} ${styles.wideModal}`}>
         <div className={styles.modalHeader}>
@@ -317,22 +412,34 @@ const UserManagement = () => {
           <div className={styles.formActions}>
             <button 
               type="button" 
-              className={`${styles.roleButton} ${styles.adminRole}`}
+              className={styles.cancelButton}
               onClick={() => setShowAddUserDialog(false)}
             >
               Cancel
             </button>
             <button 
               type="submit" 
-              className={styles.addButton}
+              className={styles.submitButton}
             >
-              + Add User
+              Add User
             </button>
           </div>
         </form>
       </div>
     </div>
   );
+
+  // Add click outside listener
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (showOptionsMenu.show && !e.target.closest(`.${styles.menuButton}`)) {
+        setShowOptionsMenu({ show: false, userId: null, x: 0, y: 0 });
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [showOptionsMenu.show]);
 
   return (
     <div className={styles.adminContainer}>
@@ -360,7 +467,7 @@ const UserManagement = () => {
           <div className={styles.whiteContainer}>
             <div className={styles.header}>
               <div className={styles.tabSection}>
-                <h2 className={styles.eventTitle}>{getPageTitle()}</h2>
+                <h2 className={styles.sectionTitle}>{getPageTitle()}</h2>
               </div>
               
               <div className={styles.actionSection}>
@@ -370,17 +477,18 @@ const UserManagement = () => {
                     placeholder="Search by name or email"
                     value={searchTerm}
                     onChange={handleSearch}
-                    className={styles.searchInput}
-                    disabled={users.length === 0}
+                    disabled={loading || users.length === 0}
                   />
                 </div>
                 
-                <button 
-                  className={styles.addButton} 
-                  onClick={() => setShowAddUserDialog(true)}
-                >
-                  + Add User
-                </button>
+                {isAdmin && (
+                  <button 
+                    className={styles.addButton} 
+                    onClick={() => setShowAddUserDialog(true)}
+                  >
+                    + Add User
+                  </button>
+                )}
 
                 <button 
                   className={`${styles.deleteButton} ${selectedUsers.length > 0 ? styles.active : ''}`}
@@ -392,7 +500,9 @@ const UserManagement = () => {
               </div>
             </div>
 
-            {users.length === 0 ? (
+            {loading ? (
+              <div className={styles.loading}>Loading users...</div>
+            ) : users.length === 0 ? (
               <div className={styles.emptyState}>
                 <div className={styles.emptyStateIcon}>👥</div>
                 <h3 className={styles.emptyStateTitle}>No Users Yet</h3>
@@ -401,23 +511,18 @@ const UserManagement = () => {
                     ? "This event doesn't have any users yet. Add users to get started!"
                     : "There are no users in the system yet. Add users to get started!"}
                 </p>
-                <button 
-                  className={styles.addButton}
-                  onClick={() => setShowAddUserDialog(true)}
-                >
-                  + Add First User
-                </button>
+                {isAdmin && (
+                  <button 
+                    className={styles.addButton}
+                    onClick={() => setShowAddUserDialog(true)}
+                  >
+                    + Add First User
+                  </button>
+                )}
               </div>
             ) : (
               <div className={styles.tableContainer}>
                 <table className={styles.table}>
-                  <colgroup>
-                    <col style={{ width: '40px' }} />
-                    <col style={{ width: '30%' }} />
-                    <col style={{ width: '40%' }} />
-                    <col style={{ width: '20%' }} />
-                    <col style={{ width: '40px' }} />
-                  </colgroup>
                   <thead>
                     <tr>
                       <th className={styles.checkbox}>
@@ -447,12 +552,14 @@ const UserManagement = () => {
                         <td>{user.email}</td>
                         <td>{renderRoleButton(user.role)}</td>
                         <td className={styles.menuCell}>
-                          <button 
-                            className={styles.menuButton}
-                            onClick={(e) => handleOptionMenuClick(e, user)}
-                          >
-                            •••
-                          </button>
+                          {canBanUser(user) && (
+                            <button 
+                              className={styles.menuButton}
+                              onClick={(e) => handleOptionMenuClick(e, user)}
+                            >
+                              •••
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -466,17 +573,6 @@ const UserManagement = () => {
 
       {showAddUserDialog && renderAddUserDialog()}
 
-      {showCreateConfirmDialog && (
-        <MessageDialog
-          messageHeading="Create New User?"
-          messageText={`Are you sure you want to create a new ${newUser.role.toLowerCase()} account for ${newUser.fullName}?`}
-          messageResponse="Create User"
-          messageResponse2="Cancel"
-          onSave={handleAddUserSubmit}
-          onCancel={() => setShowCreateConfirmDialog(false)}
-        />
-      )}
-
       {showOptionsMenu.show && (
         <div 
           className={styles.optionsMenu}
@@ -487,26 +583,15 @@ const UserManagement = () => {
             zIndex: 1000
           }}
         >
-          <div className={styles.userInfo}>
-            <div className={styles.userName}>
-              {filteredUsers.find(u => u.id === showOptionsMenu.userId)?.name}
-            </div>
-            <div className={styles.userRoleContainer}>
-              {renderRoleButton(filteredUsers.find(u => u.id === showOptionsMenu.userId)?.role)}
-            </div>
-            {canBanUser(filteredUsers.find(u => u.id === showOptionsMenu.userId)) && (
-              <button 
-                className={styles.banButton}
-                onClick={() => {
-                  setUserToBan(filteredUsers.find(u => u.id === showOptionsMenu.userId));
-                  setShowBanDialog(true);
-                  setShowOptionsMenu({ show: false, userId: null, x: 0, y: 0 });
-                }}
-              >
-                Ban User
-              </button>
-            )}
-          </div>
+          <button 
+            className={styles.banButton}
+            onClick={() => {
+              setUserToBan(users.find(u => u.id === showOptionsMenu.userId));
+              setShowBanDialog(true);
+            }}
+          >
+            Ban User
+          </button>
         </div>
       )}
 
@@ -532,6 +617,17 @@ const UserManagement = () => {
             setShowBanDialog(false);
             setUserToBan(null);
           }}
+        />
+      )}
+
+      {showCreateConfirmDialog && (
+        <MessageDialog
+          messageHeading="Create New User?"
+          messageText={`Are you sure you want to create a new ${newUser.role.toLowerCase()} account for ${newUser.fullName}?`}
+          messageResponse="Create User"
+          messageResponse2="Cancel"
+          onSave={handleAddUserSubmit}
+          onCancel={() => setShowCreateConfirmDialog(false)}
         />
       )}
     </div>

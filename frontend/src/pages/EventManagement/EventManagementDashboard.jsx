@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+// src/pages/Admin/EventManagement.jsx
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Navigate, useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '../../components/Layout/Navbar/Navbar';
@@ -6,8 +7,7 @@ import TabButtons from '../../components/TabButtons/TabButtons';
 import MessageDialog from '../../components/MessageDialog/MessageDialog';
 import { USER_ROLES } from '../../utils/constants';
 import styles from '../../styles/EventManagement.module.css';
-import adminEventsData from '../../mockdata/AdminEventManagementData.json';
-import organizerEventsData from '../../mockdata/OrganizerEventManagementData.json';
+import { toast } from 'react-toastify';
 
 const EventManagement = () => {
   const { user, isAuthenticated } = useAuth();
@@ -22,10 +22,13 @@ const EventManagement = () => {
   const [showPublishDialog, setShowPublishDialog] = useState(false);
   const [showOptionsMenu, setShowOptionsMenu] = useState({ show: false, eventId: null, x: 0, y: 0 });
   const [selectedEventForAction, setSelectedEventForAction] = useState(null);
-  
-  const [events, setEvents] = useState(
-    user?.role === USER_ROLES.ADMIN ? adminEventsData : organizerEventsData
-  );
+  const [events, setEvents] = useState({
+    published: [],
+    unpublished: [],
+    pendingApproval: [],
+    adminApproval: []
+  });
+  const [loading, setLoading] = useState(true);
 
   if (!isAuthenticated()) {
     return <Navigate to="/login" />;
@@ -49,37 +52,91 @@ const EventManagement = () => {
         { label: 'Admin Approval', value: 'adminApproval' }
       ];
 
-  const currentEvents = events[activeTab] || [];
+  // Fetch events based on tab
+  useEffect(() => {
+    const fetchEvents = async () => {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem('token');
+        let endpoint = '';
+
+        switch(activeTab) {
+          case 'published':
+            endpoint = '/api/events/upcoming';
+            break;
+          case 'unpublished':
+            endpoint = '/api/events/organizer/events';
+            break;
+          case 'pendingApproval':
+          case 'adminApproval':
+            endpoint = '/api/events/organizer/events';
+            break;
+          default:
+            endpoint = '/api/events/upcoming';
+        }
+
+        const response = await fetch(`http://localhost:3000${endpoint}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch events');
+        }
+
+        const data = await response.json();
+        
+        if (data.success) {
+          const formattedEvents = data.events.map(event => ({
+            id: event.EventID,
+            title: event.Title,
+            type: event.EventType,
+            organizer: event.OrganizerName,
+            startTime: event.StartTime,
+            endTime: event.EndTime,
+            startDate: new Date(event.StartDate).toLocaleDateString(),
+            endDate: new Date(event.EndDate).toLocaleDateString(),
+            location: event.Location,
+            attendees: event.AttendeeCount,
+            maxAttendees: event.MaxAttendees,
+            status: event.Published ? 'Published' : event.EventIsApproved ? 'Unpublished' : 'Needs Approval'
+          }));
+
+          // Filter events based on status
+          const categorizedEvents = {
+            published: formattedEvents.filter(e => e.status === 'Published'),
+            unpublished: formattedEvents.filter(e => e.status === 'Unpublished'),
+            pendingApproval: formattedEvents.filter(e => e.status === 'Needs Approval')
+          };
+
+          setEvents(prev => ({
+            ...prev,
+            [activeTab]: categorizedEvents[activeTab] || []
+          }));
+        }
+      } catch (error) {
+        console.error('Error fetching events:', error);
+        toast.error('Failed to fetch events');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEvents();
+  }, [activeTab]);
+
+    const currentEvents = events[activeTab] || [];
   
   const filteredEvents = currentEvents.filter(event =>
     event.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleAddEvent = () => {
-    const initialEventData = {
-      title: '',
-      type: '',
-      organizer: user.name,
-      startTime: '',
-      endTime: '',
-      date: '',
-      endDate: '',
-      location: '',
-      address: '',
-      zip: '',
-      attendees: '0',
-      description: '',
-      status: 'Publish',
-      category: '',
-      price: '',
-      ticketsAvailable: '',
-      createdAt: new Date().toISOString().split('T')[0],
-      lastModified: new Date().toISOString().split('T')[0]
-    };
-
     navigate('/create-event', {
       state: {
-        eventDetails: initialEventData,
         sourceRoute: '/event-management',
         activeTab: 'unpublished',
         userRole: user.role
@@ -123,63 +180,103 @@ const EventManagement = () => {
     }
   };
 
-  const handleDeleteEvents = () => {
-    const updatedEvents = {
-      ...events,
-      [activeTab]: events[activeTab].filter(event => !selectedEvents.includes(event.id))
-    };
-    setEvents(updatedEvents);
-    setShowDeleteDialog(false);
-    setSelectedEvents([]);
+  const handleDeleteEvents = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Delete each selected event
+      for (const eventId of selectedEvents) {
+        const response = await fetch(`http://localhost:3000/api/events/${eventId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to delete event ${eventId}`);
+        }
+      }
+
+      // Update local state
+      setEvents(prev => ({
+        ...prev,
+        [activeTab]: prev[activeTab].filter(event => !selectedEvents.includes(event.id))
+      }));
+
+      setShowDeleteDialog(false);
+      setSelectedEvents([]);
+      toast.success('Events deleted successfully');
+    } catch (error) {
+      console.error('Error deleting events:', error);
+      toast.error('Failed to delete events');
+    }
   };
 
-    const handleApproveEvent = () => {
-    const approvedEvent = {
-      ...selectedEventForAction,
-      status: 'Unpublished',
-      lastModified: new Date().toISOString().split('T')[0]
-    };
+  const handleApproveEvent = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:3000/api/events/${selectedEventForAction.id}/approve`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
 
-    setEvents(prev => ({
-      ...prev,
-      pendingApproval: prev.pendingApproval.filter(event => event.id !== approvedEvent.id),
-      unpublished: [...prev.unpublished, approvedEvent]
-    }));
+      if (!response.ok) {
+        throw new Error('Failed to approve event');
+      }
 
+      const data = await response.json();
+      if (data.success) {
+        setEvents(prev => ({
+          ...prev,
+          pendingApproval: prev.pendingApproval.filter(event => event.id !== selectedEventForAction.id),
+          unpublished: [...prev.unpublished, { ...selectedEventForAction, status: 'Unpublished' }]
+        }));
+        toast.success('Event approved successfully');
+      }
+    } catch (error) {
+      console.error('Error approving event:', error);
+      toast.error('Failed to approve event');
+    }
     setShowApprovalDialog(false);
     setSelectedEventForAction(null);
   };
 
-  const handleSendForApproval = () => {
-    const eventForApproval = {
-      ...selectedEventForAction,
-      status: 'Pending Approval',
-      lastModified: new Date().toISOString().split('T')[0]
-    };
+  const handlePublishEvent = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:3000/api/events/${selectedEventForAction.id}/publish`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
 
-    setEvents(prev => ({
-      ...prev,
-      unpublished: [...prev.unpublished, eventForApproval],
-      adminApproval: prev.adminApproval.filter(event => event.id !== selectedEventForAction.id)
-    }));
+      if (!response.ok) {
+        throw new Error('Failed to publish event');
+      }
 
-    setShowApprovalDialog(false);
-    setSelectedEventForAction(null);
-  };
-
-  const handlePublishEvent = () => {
-    const publishedEvent = {
-      ...selectedEventForAction,
-      status: 'Published',
-      lastModified: new Date().toISOString().split('T')[0]
-    };
-
-    setEvents(prev => ({
-      ...prev,
-      unpublished: prev.unpublished.filter(event => event.id !== publishedEvent.id),
-      published: [...prev.published, publishedEvent]
-    }));
-
+      const data = await response.json();
+      if (data.success) {
+        setEvents(prev => ({
+          ...prev,
+          unpublished: prev.unpublished.filter(event => event.id !== selectedEventForAction.id),
+          published: [...prev.published, { ...selectedEventForAction, status: 'Published' }]
+        }));
+        toast.success('Event published successfully');
+      }
+    } catch (error) {
+      console.error('Error publishing event:', error);
+      toast.error('Failed to publish event');
+    }
     setShowPublishDialog(false);
     setSelectedEventForAction(null);
   };
@@ -199,7 +296,7 @@ const EventManagement = () => {
     const eventToEdit = currentEvents.find(event => event.id === eventId);
     navigate('/edit-event', { 
       state: { 
-        eventDetails: eventToEdit,
+        eventId: eventId,
         sourceRoute: '/event-management',
         activeTab: activeTab,
         userRole: user.role
@@ -208,7 +305,7 @@ const EventManagement = () => {
     setShowOptionsMenu({ show: false, eventId: null, x: 0, y: 0 });
   };
 
-  const handleManageUsers = (eventId) => {
+    const handleManageUsers = (eventId) => {
     navigate('/user-management', { 
       state: { 
         eventId: eventId,
@@ -217,7 +314,6 @@ const EventManagement = () => {
     });
     setShowOptionsMenu({ show: false, eventId: null, x: 0, y: 0 });
   };
-  
 
   const handleActionButton = (event) => {
     setSelectedEventForAction(event);
@@ -228,10 +324,8 @@ const EventManagement = () => {
         setShowPublishDialog(true);
       }
     } else {
-      if (activeTab === 'unpublished' && event.status === 'Publish') {
+      if (activeTab === 'unpublished' && event.status === 'Unpublished') {
         setShowPublishDialog(true);
-      } else if (activeTab === 'adminApproval' && event.status === 'Get Approval') {
-        setShowApprovalDialog(true);
       }
     }
   };
@@ -255,7 +349,7 @@ const EventManagement = () => {
   }, [location]);
 
   const renderActionButton = (event) => {
-    if (activeTab === 'published') {
+    if (event.status === 'Published') {
       return (
         <span className={`${styles.status} ${styles.published}`}>
           Published
@@ -286,32 +380,13 @@ const EventManagement = () => {
         );
       }
     } else {
-      if (activeTab === 'unpublished') {
-        if (event.status === 'Publish') {
-          return (
-            <button 
-              className={styles.actionButton}
-              onClick={() => handleActionButton(event)}
-            >
-              Publish
-            </button>
-          );
-        } else if (event.status === 'Pending Approval') {
-          return (
-            <span className={`${styles.status} ${styles['pending-approval']}`}>
-              Pending Approval
-            </span>
-          );
-        }
-      }
-
-      if (activeTab === 'adminApproval' && event.status === 'Get Approval') {
+      if (activeTab === 'unpublished' && event.status === 'Unpublished') {
         return (
           <button 
             className={styles.actionButton}
             onClick={() => handleActionButton(event)}
           >
-            Get Approval
+            Publish
           </button>
         );
       }
@@ -324,28 +399,28 @@ const EventManagement = () => {
     );
   };
 
-    return (
+  return (
     <div className={styles.adminContainer}>
       <Navbar />
       <div className={styles.pageContainer}>
-      <div className={styles.headerSection}>
-        <h1 className={styles.pageTitle}>Event Management</h1>
-        <div className={styles.managementTabs}>
-          <button 
-            className={activeManagementTab === 'events' ? styles.active : ''}
-            onClick={() => handleManagementTabChange('events')}
-          >
-            Manage Events
-          </button>
-          <button 
-            className={activeManagementTab === 'users' ? styles.active : ''}
-            onClick={() => handleManagementTabChange('users')}
-          >
-            Manage Users
-          </button>
+        <div className={styles.headerSection}>
+          <h1 className={styles.pageTitle}>Event Management</h1>
+          <div className={styles.managementTabs}>
+            <button 
+              className={activeManagementTab === 'events' ? styles.active : ''}
+              onClick={() => handleManagementTabChange('events')}
+            >
+              Manage Events
+            </button>
+            <button 
+              className={activeManagementTab === 'users' ? styles.active : ''}
+              onClick={() => handleManagementTabChange('users')}
+            >
+              Manage Users
+            </button>
+          </div>
         </div>
-      </div>
-  
+
         <div className={styles.contentContainer}>
           <div className={styles.whiteContainer}>
             <div className={styles.header}>
@@ -382,66 +457,70 @@ const EventManagement = () => {
             </div>
 
             <div className={styles.tableContainer}>
-              <table className={styles.table}>
-                <colgroup>
-                  <col style={{ width: '40px' }} />
-                  <col style={{ width: '20%' }} />
-                  <col style={{ width: '10%' }} />
-                  <col style={{ width: '20%' }} />
-                  <col style={{ width: '10%' }} />
-                  <col style={{ width: '9%' }} />
-                  <col style={{ width: '9%' }} />
-                  <col style={{ width: '100px' }} />
-                  <col style={{ width: '40px' }} />
-                </colgroup>
-                <thead>
-                  <tr>
-                    <th className={styles.checkbox}>
-                      <input 
-                        type="checkbox"
-                        checked={selectedEvents.length === filteredEvents.length && filteredEvents.length > 0}
-                        onChange={handleCheckAll}
-                      />
-                    </th>
-                    <th>Event Title</th>
-                    <th>Event Type</th>
-                    <th>Event Organizer</th>
-                    <th>Start</th>
-                    <th>End</th>
-                    <th>Attendees</th>
-                    <th>Status</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredEvents.map(event => (
-                    <tr key={event.id}>
-                      <td className={styles.checkbox}>
-                        <input
+              {loading ? (
+                <div className={styles.loading}>Loading events...</div>
+              ) : (
+                <table className={styles.table}>
+                  <colgroup>
+                    <col style={{ width: '40px' }} />
+                    <col style={{ width: '20%' }} />
+                    <col style={{ width: '10%' }} />
+                    <col style={{ width: '20%' }} />
+                    <col style={{ width: '10%' }} />
+                    <col style={{ width: '9%' }} />
+                    <col style={{ width: '9%' }} />
+                    <col style={{ width: '100px' }} />
+                    <col style={{ width: '40px' }} />
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th className={styles.checkbox}>
+                        <input 
                           type="checkbox"
-                          checked={selectedEvents.includes(event.id)}
-                          onChange={() => handleCheckEvent(event.id)}
+                          checked={selectedEvents.length === filteredEvents.length && filteredEvents.length > 0}
+                          onChange={handleCheckAll}
                         />
-                      </td>
-                      <td>{event.title}</td>
-                      <td>{event.type}</td>
-                      <td>{event.organizer}</td>
-                      <td>{event.startTime}</td>
-                      <td>{event.endTime}</td>
-                      <td>{event.attendees}</td>
-                      <td>{renderActionButton(event)}</td>
-                      <td className={styles.menuCell}>
-                        <button 
-                          className={styles.menuButton}
-                          onClick={(e) => handleOptionMenuClick(e, event)}
-                        >
-                          •••
-                        </button>
-                    </td>
+                      </th>
+                      <th>Event Title</th>
+                      <th>Event Type</th>
+                      <th>Event Organizer</th>
+                      <th>Start</th>
+                      <th>End</th>
+                      <th>Attendees</th>
+                      <th>Status</th>
+                      <th></th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {filteredEvents.map(event => (
+                      <tr key={event.id}>
+                        <td className={styles.checkbox}>
+                          <input
+                            type="checkbox"
+                            checked={selectedEvents.includes(event.id)}
+                            onChange={() => handleCheckEvent(event.id)}
+                          />
+                        </td>
+                        <td>{event.title}</td>
+                        <td>{event.type}</td>
+                        <td>{event.organizer}</td>
+                        <td>{`${event.startDate} ${event.startTime}`}</td>
+                        <td>{`${event.endDate} ${event.endTime}`}</td>
+                        <td>{`${event.attendees}/${event.maxAttendees}`}</td>
+                        <td>{renderActionButton(event)}</td>
+                        <td className={styles.menuCell}>
+                          <button 
+                            className={styles.menuButton}
+                            onClick={(e) => handleOptionMenuClick(e, event)}
+                          >
+                            •••
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
         </div>
@@ -480,7 +559,7 @@ const EventManagement = () => {
           messageHeading={isAdmin ? "Approve Event?" : "Send for Admin Approval?"}
           messageResponse={isAdmin ? "Approve" : "Send"}
           messageResponse2="Cancel"
-          onSave={isAdmin ? handleApproveEvent : handleSendForApproval}
+          onSave={handleApproveEvent}
           onCancel={() => {
             setShowApprovalDialog(false);
             setSelectedEventForAction(null);
