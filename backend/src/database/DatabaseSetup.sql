@@ -1,0 +1,144 @@
+-- Run this to create database along with test data
+-- Drop existing tables if they exist (in correct order due to foreign key constraints)
+DROP TABLE IF EXISTS EVENT_HISTORY;
+DROP TABLE IF EXISTS EVENT_ENROLLMENT;
+DROP TABLE IF EXISTS BANNED_USERS;
+DROP TABLE IF EXISTS ATTENDEE;
+DROP TABLE IF EXISTS EVENT;
+DROP TABLE IF EXISTS VENUE;
+DROP TABLE IF EXISTS USER_ROLES;
+DROP TABLE IF EXISTS ROLE;
+DROP TABLE IF EXISTS USER;
+DROP TABLE IF EXISTS EVENT_CATEGORY;
+
+-- Create ROLE table
+CREATE TABLE ROLE (
+    RoleID INT PRIMARY KEY AUTO_INCREMENT,
+    RoleName VARCHAR(50) NOT NULL UNIQUE,
+    Permissions TEXT,
+    CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Create USER table
+CREATE TABLE USER (
+    UserID INT PRIMARY KEY AUTO_INCREMENT,
+    UserFullname VARCHAR(100) NOT NULL,
+    UserEmail VARCHAR(100) NOT NULL UNIQUE,
+    UserPassword VARCHAR(255) NOT NULL,
+    UserType ENUM('Attendee', 'Organizer', 'Admin') NOT NULL,
+    UserStatus ENUM('Active', 'Banned', 'Suspended') DEFAULT 'Active',
+    BannedAt DATETIME,
+    BannedBy INT,
+    BanReason TEXT,
+    LastLoginAt DATETIME,
+    CreatedBy INT,
+    CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (BannedBy) REFERENCES USER(UserID),
+    FOREIGN KEY (CreatedBy) REFERENCES USER(UserID)
+);
+
+-- Create EVENT_CATEGORY table
+CREATE TABLE EVENT_CATEGORY (
+    CategoryID INT PRIMARY KEY AUTO_INCREMENT,
+    CategoryName VARCHAR(50) NOT NULL UNIQUE,
+    Description TEXT,
+    CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Create VENUE table
+CREATE TABLE VENUE (
+    VenueID INT PRIMARY KEY AUTO_INCREMENT,
+    Name VARCHAR(100) NOT NULL,
+    Location VARCHAR(255) NOT NULL,
+    Address VARCHAR(255) NOT NULL,
+    Pin_Code VARCHAR(20),
+    Capacity INT,
+    CreatedBy INT,
+    CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (CreatedBy) REFERENCES USER(UserID)
+);
+
+-- Create EVENT table
+CREATE TABLE EVENT (
+    EventID INT PRIMARY KEY AUTO_INCREMENT,
+    Title VARCHAR(255) NOT NULL,
+    Description TEXT,
+    EventType ENUM('Physical', 'Online', 'Hybrid') NOT NULL,
+    CategoryID INT,
+    StartDate DATE NOT NULL,
+    StartTime TIME NOT NULL,
+    EndDate DATE NOT NULL,
+    EndTime TIME NOT NULL,
+    VenueID INT,
+    Location VARCHAR(255) NOT NULL,
+    Address VARCHAR(255),
+    Image LONGBLOB,
+    Price DECIMAL(10,2),
+    MaxAttendees INT,
+    TicketsAvailable INT,
+    AttendeeCount INT DEFAULT 0,
+    Published BOOLEAN DEFAULT FALSE,
+    EventIsDeleted BOOLEAN DEFAULT FALSE,
+    EventIsApproved BOOLEAN DEFAULT FALSE,
+    CreatedBy INT NOT NULL,
+    EventApprovedBy INT,
+    EventApprovedTime DATETIME,
+    Status ENUM('Published', 'Unpublished', 'Pending Approval', 'Cancelled'),
+    CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (CategoryID) REFERENCES EVENT_CATEGORY(CategoryID),
+    FOREIGN KEY (VenueID) REFERENCES VENUE(VenueID),
+    FOREIGN KEY (CreatedBy) REFERENCES USER(UserID),
+    FOREIGN KEY (EventApprovedBy) REFERENCES USER(UserID)
+    );
+
+-- Create EVENT_ENROLLMENT table
+CREATE TABLE EVENT_ENROLLMENT (
+    EnrollmentID INT PRIMARY KEY AUTO_INCREMENT,
+    UserID INT NOT NULL,
+    EventID INT NOT NULL,
+    Status ENUM('Pending', 'Confirmed', 'Cancelled', 'Rejected') NOT NULL,
+    PaymentStatus ENUM('Pending', 'Completed', 'Failed', 'Refunded') NOT NULL,
+    PaymentAmount DECIMAL(10,2),
+    PaymentDate DATETIME,
+    TicketType VARCHAR(50),
+    EnrollmentDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CreatedBy INT,
+    FOREIGN KEY (UserID) REFERENCES USER(UserID),
+    FOREIGN KEY (EventID) REFERENCES EVENT(EventID),
+    FOREIGN KEY (CreatedBy) REFERENCES USER(UserID)
+);
+
+-- Create BANNED_USERS table
+CREATE TABLE BANNED_USERS (
+    BanID INT PRIMARY KEY AUTO_INCREMENT,
+    UserID INT NOT NULL,
+    BannedAt DATETIME NOT NULL,
+    BannedBy INT NOT NULL,
+    OriginalRole VARCHAR(50),
+    AssociatedEvents TEXT,
+    BanReason TEXT,
+    CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (UserID) REFERENCES USER(UserID),
+    FOREIGN KEY (BannedBy) REFERENCES USER(UserID)
+);
+
+-- Create EVENT_HISTORY table
+CREATE TABLE EVENT_HISTORY (
+    HistoryID INT PRIMARY KEY AUTO_INCREMENT,
+    EventID INT NOT NULL,
+    ModifiedBy INT NOT NULL,
+    ModificationType VARCHAR(50),
+    OldValue TEXT,
+    NewValue TEXT,
+    ModifiedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (EventID) REFERENCES EVENT(EventID),
+    FOREIGN KEY (ModifiedBy) REFERENCES USER(UserID)
+);
+
+
+

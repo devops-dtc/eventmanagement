@@ -139,7 +139,12 @@ JWT_EXPIRES_IN=24h
 CREATE DATABASE easyevent_db;
 ```
 
-Run the provided database migration scripts in `backend/src/database/migrations`
+Run the sql queries to create a the Database Schema from `backend/src/database/DatabaseSetup.sql`
+
+> [!Note]
+> To Populate the Database with Mock Data run the Query file in `backend/src/database/MockData.sql`
+
+
 
 ### Step 5: Start the Application
 
